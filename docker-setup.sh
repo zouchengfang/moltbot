@@ -172,26 +172,28 @@ docker build \
   -f "$ROOT_DIR/Dockerfile" \
   "$ROOT_DIR"
 
-echo ""
-echo "==> Onboarding (interactive)"
-echo "When prompted:"
-echo "  - Gateway bind: lan"
-echo "  - Gateway auth: token"
-echo "  - Gateway token: $CLAWDBOT_GATEWAY_TOKEN"
-echo "  - Tailscale exposure: Off"
-echo "  - Install Gateway daemon: No"
-echo ""
-docker compose "${COMPOSE_ARGS[@]}" run --rm moltbot-cli onboard --no-install-daemon
+if [[ "${SKIP_ONBOARD:-0}" != "1" ]]; then
+  echo ""
+  echo "==> Onboarding (interactive)"
+  echo "When prompted:"
+  echo "  - Gateway bind: lan"
+  echo "  - Gateway auth: token"
+  echo "  - Gateway token: $CLAWDBOT_GATEWAY_TOKEN"
+  echo "  - Tailscale exposure: Off"
+  echo "  - Install Gateway daemon: No"
+  echo ""
+  docker compose "${COMPOSE_ARGS[@]}" run --rm moltbot-cli onboard --no-install-daemon
 
-echo ""
-echo "==> Provider setup (optional)"
-echo "WhatsApp (QR):"
-echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers login"
-echo "Telegram (bot token):"
-echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers add --provider telegram --token <token>"
-echo "Discord (bot token):"
-echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers add --provider discord --token <token>"
-echo "Docs: https://docs.molt.bot/providers"
+  echo ""
+  echo "==> Provider setup (optional)"
+  echo "WhatsApp (QR):"
+  echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers login"
+  echo "Telegram (bot token):"
+  echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers add --provider telegram --token <token>"
+  echo "Discord (bot token):"
+  echo "  ${COMPOSE_HINT} run --rm moltbot-cli providers add --provider discord --token <token>"
+  echo "Docs: https://docs.molt.bot/providers"
+fi
 
 echo ""
 echo "==> Starting gateway"

@@ -1,0 +1,34 @@
+# Compose override for app1-server (10.0.55.131).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d
+# - Binds config/workspace to /zouchengfang/moltbot on host.
+# - Uses proxy 10.5.0.8:3128; NO_PROXY: DeepSeek/Qwen APIs, local nets (10.0.55.x, 10.0.66.x, 10.8.0.x, 10.5.x.x), *.cn.
+# - CLAWDBOT_STATE_DIR: skip legacy .clawdbot→.moltbot rename (mount cannot be renamed, EBUSY).
+# - gateway --allow-unconfigured: allow start before onboard so UI is reachable for setup.
+services:
+  moltbot-gateway:
+    environment:
+      CLAWDBOT_STATE_DIR: /home/node/.clawdbot
+      MOLTBOT_STATE_DIR: /home/node/.clawdbot
+      HTTP_PROXY: ${HTTP_PROXY:-http://10.5.0.8:3128}
+      HTTPS_PROXY: ${HTTPS_PROXY:-http://10.5.0.8:3128}
+      http_proxy: ${HTTP_PROXY:-http://10.5.0.8:3128}
+      https_proxy: ${HTTPS_PROXY:-http://10.5.0.8:3128}
+      NO_PROXY: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
+      no_proxy: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
+    volumes:
+      - ${CLAWDBOT_CONFIG_DIR:-/zouchengfang/moltbot/.clawdbot}:/home/node/.clawdbot
+      - ${CLAWDBOT_WORKSPACE_DIR:-/zouchengfang/moltbot/clawd}:/home/node/clawd
+
+  moltbot-cli:
+    environment:
+      CLAWDBOT_STATE_DIR: /home/node/.clawdbot
+      MOLTBOT_STATE_DIR: /home/node/.clawdbot
+      HTTP_PROXY: ${HTTP_PROXY:-http://10.5.0.8:3128}
+      HTTPS_PROXY: ${HTTPS_PROXY:-http://10.5.0.8:3128}
+      http_proxy: ${HTTP_PROXY:-http://10.5.0.8:3128}
+      https_proxy: ${HTTPS_PROXY:-http://10.5.0.8:3128}
+      NO_PROXY: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
+      no_proxy: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
+    volumes:
+      - ${CLAWDBOT_CONFIG_DIR:-/zouchengfang/moltbot/.clawdbot}:/home/node/.clawdbot
+      - ${CLAWDBOT_WORKSPACE_DIR:-/zouchengfang/moltbot/clawd}:/home/node/clawd
