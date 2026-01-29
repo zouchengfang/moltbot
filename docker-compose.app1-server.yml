@@ -15,6 +15,8 @@ services:
       https_proxy: ${HTTPS_PROXY:-http://10.5.0.8:3128}
       NO_PROXY: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
       no_proxy: ${NO_PROXY:-api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn}
+      CLAWDBOT_GATEWAY_CONTROLUI_ALLOW_INSECURE_AUTH: true
+      gateway.controlUi.allowInsecureAuth: true
     volumes:
       - ${CLAWDBOT_CONFIG_DIR:-/zouchengfang/moltbot/.clawdbot}:/home/node/.clawdbot
       - ${CLAWDBOT_WORKSPACE_DIR:-/zouchengfang/moltbot/clawd}:/home/node/clawd
