@@ -41,10 +41,19 @@ if [[ -z "${CLAWDBOT_GATEWAY_TOKEN:-}" ]]; then
   fi
 fi
 
-echo "==> Building image"
-docker build -t moltbot:local -f Dockerfile .
+# 中国境内构建可使用国内镜像（USE_CHINA_MIRROR=1，默认开启）
+USE_CHINA_MIRROR="${USE_CHINA_MIRROR:-1}"
+BUILD_ARGS=(--build-arg "CLAWDBOT_DOCKER_APT_PACKAGES=${CLAWDBOT_DOCKER_APT_PACKAGES:-}")
+if [[ "$USE_CHINA_MIRROR" =~ ^(1|yes|true)$ ]]; then
+  BUILD_ARGS+=(--build-arg "NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm")
+  BUILD_ARGS+=(--build-arg "PNPM_REGISTRY=https://registry.npmmirror.com")
+  echo "==> Building image (China mirrors: Node DaoCloud, npm npmmirror)"
+else
+  echo "==> Building image"
+fi
+docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS[@]}"
 
 echo "==> Starting gateway (compose + app1-server override)"
-docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d moltbot-gateway
+docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway
 
 echo "Done. Gateway: http://$(hostname -I | awk '{print $1}'):18789/  Token: ${CLAWDBOT_GATEWAY_TOKEN:-<see .env>}"

@@ -7,7 +7,17 @@
 - 本机可 SSH 到 `root@10.0.55.131`（建议配置免密）
 - 服务器已安装 Docker 与 Docker Compose
 
-## 一键部署（在 moltbot 仓库根目录执行）
+## 完整重新打包部署（推荐）
+
+在 moltbot 仓库根目录执行，会：**同步代码 → 在服务器上重新构建镜像 → 强制重建并启动网关**：
+
+```bash
+./scripts/deploy-to-app1-server/full-redeploy.sh
+```
+
+等价于先 `deploy.sh sync` 再 `deploy.sh remote`；`remote.sh` 内使用 `docker compose up -d --force-recreate moltbot-gateway`，保证用新镜像重建容器。
+
+## 一键部署（首次或常规）
 
 ```bash
 ./scripts/deploy-to-app1-server/deploy.sh
@@ -27,9 +37,26 @@
 ./scripts/deploy-to-app1-server/deploy.sh remote
 ```
 
-## 直接用 SSH 在服务器上执行脚本
+## 在 131 服务器上直接执行（重新打包部署）
 
-代码已同步到服务器后，可用一条 SSH 命令在远程执行构建与启动：
+已在服务器上（如 `git pull` 后）时，只做**重新构建 + 强制重建并启动**，不创建 .env/目录：
+
+```bash
+# 在 131 上执行
+cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-server/redeploy-on-server.sh
+```
+
+或本机 SSH 执行：
+
+```bash
+ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-server/redeploy-on-server.sh'
+```
+
+与 `remote.sh` 区别：`redeploy-on-server.sh` 不创建目录、不生成 .env，假定已部署过，仅 build + up --force-recreate。
+
+## 直接用 SSH 在服务器上执行脚本（首次或完整）
+
+代码已同步到服务器后，可用一条 SSH 命令在远程执行**完整**构建与启动（含目录、.env、build、启动）：
 
 ```bash
 ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-server/remote.sh'
@@ -42,6 +69,29 @@ ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-serve
 - `REMOTE`：SSH 目标，默认 `root@10.0.55.131`
 - `APP_ROOT`：服务器上应用根目录，默认 `/zouchengfang/moltbot`
 - `NODES_CONFIG`：`nodes_config.yaml` 路径，若存在且本机有 `yq`，会从中解析 app1-server 的 IP 与路径
+
+## 国内镜像（打包加速）
+
+在 131 上构建时，脚本默认使用中国境内镜像以加速拉取：
+
+- **Node 基础镜像**：`docker.m.daocloud.io/library/node:22-bookworm`（DaoCloud Docker Hub 镜像）
+- **npm/pnpm 源**：`https://registry.npmmirror.com`（npmmirror 淘宝源）
+
+`remote.sh` 与 `redeploy-on-server.sh` 默认 `USE_CHINA_MIRROR=1`。若使用海外环境构建，可关闭：
+
+```bash
+USE_CHINA_MIRROR=0 ./scripts/deploy-to-app1-server/redeploy-on-server.sh
+```
+
+**手动构建时使用国内镜像：**
+
+```bash
+cd /zouchengfang/moltbot
+docker build -t moltbot:local -f Dockerfile . \
+  --build-arg NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm \
+  --build-arg PNPM_REGISTRY=https://registry.npmmirror.com
+docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway
+```
 
 ## 代理与 NO_PROXY
 

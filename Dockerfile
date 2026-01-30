@@ -1,4 +1,6 @@
-FROM node:22-bookworm
+# Base image (override for China: NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm)
+ARG NODE_IMAGE=node:22-bookworm
+FROM ${NODE_IMAGE}
 
 # Install Bun (required for build scripts)
 RUN curl -fsSL https://bun.sh/install | bash
@@ -20,6 +22,10 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY ui/package.json ./ui/package.json
 COPY patches ./patches
 COPY scripts ./scripts
+
+# npm/pnpm registry (override for China: PNPM_REGISTRY=https://registry.npmmirror.com)
+ARG PNPM_REGISTRY=
+RUN if [ -n "$PNPM_REGISTRY" ]; then echo "registry=$PNPM_REGISTRY" >> .npmrc; fi
 
 RUN pnpm install --frozen-lockfile
 
