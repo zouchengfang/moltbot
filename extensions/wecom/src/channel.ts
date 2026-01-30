@@ -109,7 +109,9 @@ export const wecomPlugin: ChannelPlugin<ResolvedWeComAccount> = {
       if (!account.webhookUrl) {
         throw new Error("WeCom webhook URL not configured");
       }
-      const content = mediaUrl ? `${text || ""}\n${mediaUrl}`.trim() || text;
+      const content = mediaUrl
+        ? `${text || ""}\n${mediaUrl}`.trim() || text
+        : text;
       const result = await sendMessageWeCom(account.webhookUrl, content || "(媒体)", {
         accountId: resolvedAccountId,
       });
