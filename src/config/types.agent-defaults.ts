@@ -136,6 +136,11 @@ export type AgentDefaultsConfig = {
   thinkingDefault?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
   /** Default verbose level when no /verbose directive is present. */
   verboseDefault?: "off" | "on" | "full";
+  /**
+   * Default reasoning level when no /reasoning directive is present.
+   * When "on" or "stream", both thinking process and final answer are shown.
+   */
+  reasoningDefault?: "off" | "on" | "stream";
   /** Default elevated level when no /elevated directive is present. */
   elevatedDefault?: "off" | "on" | "ask" | "full";
   /** Default block streaming level when no override is present. */

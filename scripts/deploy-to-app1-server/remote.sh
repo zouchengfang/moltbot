@@ -51,6 +51,15 @@ if [[ "$USE_CHINA_MIRROR" =~ ^(1|yes|true)$ ]]; then
 else
   echo "==> Building image"
 fi
+# 构建时仅 GitHub 等走代理；npm(npmmirror)、bun.sh 等直连
+if [[ -n "${HTTP_PROXY:-}" ]] || [[ -n "${http_proxy:-}" ]]; then
+  BUILD_ARGS+=(--build-arg "HTTP_PROXY=${HTTP_PROXY:-$http_proxy}")
+  BUILD_ARGS+=(--build-arg "HTTPS_PROXY=${HTTPS_PROXY:-$https_proxy}")
+  BUILD_NO_PROXY="${NO_PROXY:-$no_proxy}"
+  BUILD_NO_PROXY="${BUILD_NO_PROXY:+$BUILD_NO_PROXY,}registry.npmmirror.com,npmmirror.com,bun.sh,.cn"
+  BUILD_ARGS+=(--build-arg "NO_PROXY=$BUILD_NO_PROXY")
+  echo "==> Using proxy for build (only GitHub etc.; npm/bun direct)"
+fi
 docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS[@]}"
 
 echo "==> Starting gateway (compose + app1-server override)"

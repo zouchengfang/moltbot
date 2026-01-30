@@ -138,13 +138,23 @@ export function buildEmbeddedRunPayloads(params: {
     }
     return isRawApiErrorPayload(trimmed);
   };
-  const answerTexts = (
+  let answerTexts = (
     params.assistantTexts.length
       ? params.assistantTexts
       : fallbackAnswerText
         ? [fallbackAnswerText]
         : []
   ).filter((text) => !shouldSuppressRawErrorText(text));
+
+  // When model returns only thinking/reasoning and no text block (e.g. DeepSeek reasoner),
+  // use thinking as the visible reply so the user does not see an empty result.
+  // When reasoningLevel is "on", reasoning is already in replyItems above; avoid duplicate.
+  if (answerTexts.length === 0 && params.lastAssistant && params.reasoningLevel !== "on") {
+    const thinkingOnly = extractAssistantThinking(params.lastAssistant).trim();
+    if (thinkingOnly) {
+      answerTexts = [formatReasoningMessage(thinkingOnly)];
+    }
+  }
 
   for (const text of answerTexts) {
     const {

@@ -244,4 +244,43 @@ describe("buildEmbeddedRunPayloads", () => {
     expect(payloads[0]?.isError).toBe(true);
     expect(payloads[0]?.text).toContain("connection timeout");
   });
+
+  it("uses thinking as visible reply when model returns only thinking and no text block", () => {
+    const payloads = buildEmbeddedRunPayloads({
+      assistantTexts: [],
+      toolMetas: [],
+      lastAssistant: {
+        stopReason: "end_turn",
+        content: [{ type: "thinking", thinking: "Internal reasoning step." }],
+      } as AssistantMessage,
+      sessionKey: "session:webchat",
+      inlineToolResultsAllowed: false,
+      verboseLevel: "off",
+      reasoningLevel: "off",
+      toolResultFormat: "plain",
+    });
+
+    expect(payloads).toHaveLength(1);
+    expect(payloads[0]?.text).toContain("Reasoning:");
+    expect(payloads[0]?.text).toContain("Internal reasoning step.");
+  });
+
+  it("does not duplicate reasoning when reasoningLevel is on and only thinking", () => {
+    const payloads = buildEmbeddedRunPayloads({
+      assistantTexts: [],
+      toolMetas: [],
+      lastAssistant: {
+        stopReason: "end_turn",
+        content: [{ type: "thinking", thinking: "Only reasoning." }],
+      } as AssistantMessage,
+      sessionKey: "session:webchat",
+      inlineToolResultsAllowed: false,
+      verboseLevel: "off",
+      reasoningLevel: "on",
+      toolResultFormat: "plain",
+    });
+
+    expect(payloads).toHaveLength(1);
+    expect(payloads.every((p) => p.text?.includes("Reasoning:"))).toBe(true);
+  });
 });
