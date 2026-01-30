@@ -1,4 +1,4 @@
-# Base image (override for China: NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm)
+# Base image (override for China: NODE_IMAGE=docker.1ms.run/library/node:22-bookworm)
 ARG NODE_IMAGE=node:22-bookworm
 FROM ${NODE_IMAGE}
 

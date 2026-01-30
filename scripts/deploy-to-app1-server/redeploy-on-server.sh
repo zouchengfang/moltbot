@@ -21,9 +21,9 @@ export CLAWDBOT_WORKSPACE_DIR="${CLAWDBOT_WORKSPACE_DIR:-/zouchengfang/moltbot/c
 USE_CHINA_MIRROR="${USE_CHINA_MIRROR:-1}"
 BUILD_ARGS=(--build-arg "CLAWDBOT_DOCKER_APT_PACKAGES=${CLAWDBOT_DOCKER_APT_PACKAGES:-}")
 if [[ "$USE_CHINA_MIRROR" =~ ^(1|yes|true)$ ]]; then
-  BUILD_ARGS+=(--build-arg "NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm")
+  BUILD_ARGS+=(--build-arg "NODE_IMAGE=docker.1ms.run/library/node:22-bookworm")
   BUILD_ARGS+=(--build-arg "PNPM_REGISTRY=https://registry.npmmirror.com")
-  echo "==> Building image (China mirrors: Node DaoCloud, npm npmmirror)"
+  echo "==> Building image (China mirrors: Node 1ms, npm npmmirror)"
 else
   echo "==> Building image"
 fi

@@ -74,10 +74,10 @@ ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-serve
 
 在 131 上构建时，脚本默认使用中国境内镜像以加速拉取：
 
-- **Node 基础镜像**：`docker.m.daocloud.io/library/node:22-bookworm`（DaoCloud Docker Hub 镜像）
+- **Node 基础镜像**：`docker.1ms.run/library/node:22-bookworm`（1ms Docker Hub 镜像，无需认证）
 - **npm/pnpm 源**：`https://registry.npmmirror.com`（npmmirror 淘宝源）
 
-`remote.sh` 与 `redeploy-on-server.sh` 默认 `USE_CHINA_MIRROR=1`。若使用海外环境构建，可关闭：
+`remote.sh` 与 `redeploy-on-server.sh` 默认 `USE_CHINA_MIRROR=1`。若使用海外环境构建或当前国内镜像不可用，可关闭国内镜像（改走代理拉取 Docker Hub）：
 
 ```bash
 USE_CHINA_MIRROR=0 ./scripts/deploy-to-app1-server/redeploy-on-server.sh
@@ -88,7 +88,7 @@ USE_CHINA_MIRROR=0 ./scripts/deploy-to-app1-server/redeploy-on-server.sh
 ```bash
 cd /zouchengfang/moltbot
 docker build -t moltbot:local -f Dockerfile . \
-  --build-arg NODE_IMAGE=docker.m.daocloud.io/library/node:22-bookworm \
+  --build-arg NODE_IMAGE=docker.1ms.run/library/node:22-bookworm \
   --build-arg PNPM_REGISTRY=https://registry.npmmirror.com
 docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway
 ```
