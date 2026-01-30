@@ -198,9 +198,11 @@ ports:
 - 端口映射若只允许本机访问：使用 `"127.0.0.1:18789:18789"`，通过 SSH 隧道访问；若对外暴露需自行配置防火墙与 TLS。
 - 更多细节见 [Hetzner (Docker VPS)](/platforms/hetzner) 与 [Docker（英文）](/install/docker)。
 
-## 打包/部署时不走代理的地址
+## 打包/部署与代理
 
-使用网络代理（如 HTTP_PROXY/HTTPS_PROXY）进行打包或部署时，以下地址应加入 **NO_PROXY**，不经过代理直连：
+**构建时使用代理**：若在构建前已设置 `http_proxy`/`https_proxy`（如 Jenkins SSH 中 `export`），`scripts/deploy-to-app1-server/redeploy-on-server.sh` 会将其作为 Docker 构建参数传入，镜像内 `pnpm install`、`pnpm ui:install`（含从 GitHub 下载 matrix-sdk-crypto 等）会走代理，可避免直连超时（如 `socket hang up`）。详见该目录下 README「代理与 NO_PROXY」小节。
+
+**运行时不走代理的地址**：使用网络代理进行打包或部署时，以下地址应加入 **NO_PROXY**，不经过代理直连：
 
 - **DeepSeek**：`api.deepseek.com`
 - **Qwen 相关 API**：`chat.qwen.ai`、`portal.qwen.ai`、`dashscope.aliyun.com`

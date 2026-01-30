@@ -95,7 +95,9 @@ docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --f
 
 ## 代理与 NO_PROXY
 
-打包部署时，**以下地址不使用网络代理**（已写入 NO_PROXY）：
+**构建时代理**：若在执行脚本前已设置 `http_proxy`/`https_proxy`（如 Jenkins 在 SSH 中 `export http_proxy=...`），`redeploy-on-server.sh` 会将其作为 Docker 构建参数传入，镜像内 `pnpm install` / `pnpm ui:install`（含从 GitHub 下载 matrix-sdk-crypto 等）会走代理，可避免直连超时（如 `socket hang up`）。
+
+打包/运行时，**以下地址不使用网络代理**（已写入 NO_PROXY）：
 
 - **DeepSeek**：`api.deepseek.com`
 - **Qwen API**：`chat.qwen.ai`、`portal.qwen.ai`、`dashscope.aliyun.com`
