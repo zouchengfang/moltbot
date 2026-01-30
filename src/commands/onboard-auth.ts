@@ -20,6 +20,10 @@ export {
   applyZaiConfig,
 } from "./onboard-auth.config-core.js";
 export {
+  applyDeepseekConfig,
+  applyDeepseekProviderConfig,
+} from "./onboard-auth.config-deepseek.js";
+export {
   applyMinimaxApiConfig,
   applyMinimaxApiProviderConfig,
   applyMinimaxConfig,
@@ -41,6 +45,7 @@ export {
   setMoonshotApiKey,
   setOpencodeZenApiKey,
   setOpenrouterApiKey,
+  setDeepseekApiKey,
   setSyntheticApiKey,
   setVeniceApiKey,
   setVercelAiGatewayApiKey,

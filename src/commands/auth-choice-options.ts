@@ -15,6 +15,7 @@ export type AuthChoiceGroupId =
   | "openrouter"
   | "ai-gateway"
   | "moonshot"
+  | "deepseek"
   | "zai"
   | "opencode-zen"
   | "minimax"
@@ -64,6 +65,12 @@ const AUTH_CHOICE_GROUP_DEFS: {
     label: "Synthetic",
     hint: "Anthropic-compatible (multi-model)",
     choices: ["synthetic-api-key"],
+  },
+  {
+    value: "deepseek",
+    label: "DeepSeek",
+    hint: "API key (chat / reasoner / vision)",
+    choices: ["deepseek-api-key"],
   },
   {
     value: "venice",
@@ -142,6 +149,11 @@ export function buildAuthChoiceOptions(params: {
   options.push({ value: "moonshot-api-key", label: "Moonshot AI API key" });
   options.push({ value: "kimi-code-api-key", label: "Kimi Code API key" });
   options.push({ value: "synthetic-api-key", label: "Synthetic API key" });
+  options.push({
+    value: "deepseek-api-key",
+    label: "DeepSeek API key",
+    hint: "Chat, reasoner, and vision models",
+  });
   options.push({
     value: "venice-api-key",
     label: "Venice AI API key",

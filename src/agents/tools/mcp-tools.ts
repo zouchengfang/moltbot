@@ -3,16 +3,18 @@
  * Connects to each server (stdio or Streamable HTTP), lists tools, and exposes them as AnyAgentTool.
  */
 
+import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import type { MoltbotConfig } from "../../config/config.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
-import {
-  loadCursorMcpConfig,
-  type CursorMcpServerConfig,
-} from "../skills/mcp-cursor.js";
+import { loadCursorMcpConfig, type CursorMcpServerConfig } from "../skills/mcp-cursor.js";
 import type { AnyAgentTool } from "./common.js";
 import { jsonResult } from "./common.js";
 
 const log = createSubsystemLogger("mcp-tools");
+
+/** MCP SDK 1.25: Client from @modelcontextprotocol/sdk/client; Transport = connect() argument type. */
+type McpClient = (typeof import("@modelcontextprotocol/sdk/client"))["Client"];
+type McpTransport = InstanceType<McpClient> extends { connect(t: infer T): unknown } ? T : never;
 
 function isMcpEnabled(config?: MoltbotConfig): boolean {
   const raw = config?.skills?.mcp;
@@ -44,15 +46,19 @@ type McpContentItem =
   | { type: "image"; data?: string; mimeType?: string }
   | { type: string; [k: string]: unknown };
 
-function mcpContentToAgentResult(content: McpContentItem[]): { content: McpContentItem[]; details?: unknown } {
-  const blocks = content.map((item) => {
+/** Convert MCP content items to AgentToolResult content (text/image with required fields). */
+function mcpContentToAgentResult(content: McpContentItem[]): {
+  content: AgentToolResult<unknown>["content"];
+  details?: unknown;
+} {
+  const blocks: AgentToolResult<unknown>["content"] = content.map((item) => {
     if (item.type === "text" && "text" in item) {
-      return { type: "text" as const, text: item.text };
+      return { type: "text" as const, text: String((item as { text: string }).text) };
     }
-    if (item.type === "image" && "data" in item) {
+    if (item.type === "image") {
       return {
         type: "image" as const,
-        data: item.data ?? "",
+        data: (item as { data?: string }).data ?? "",
         mimeType: (item as { mimeType?: string }).mimeType ?? "image/png",
       };
     }
@@ -64,25 +70,40 @@ function mcpContentToAgentResult(content: McpContentItem[]): { content: McpConte
   };
 }
 
+/** Build env object with only string values (MCP stdio transport expects Record<string, string>). */
+function toEnvRecord(
+  env: Record<string, string | undefined> | undefined,
+): Record<string, string> | undefined {
+  if (!env) return undefined;
+  const entries = Object.entries(env).filter(
+    (entry): entry is [string, string] => typeof entry[1] === "string",
+  );
+  return Object.fromEntries(entries) as Record<string, string>;
+}
+
 async function connectAndListTools(params: {
   serverKey: string;
   serverConfig: CursorMcpServerConfig;
 }): Promise<{ serverKey: string; tools: McpTool[] } | null> {
   const { serverKey, serverConfig } = params;
-  let Client: new (a: { name: string; version: string }, b: { capabilities?: object }) => {
-    connect(t: { start(): Promise<void>; close(): Promise<void> }): Promise<void>;
-    request(req: { method: string; params: object }, schema: { parse: (v: unknown) => unknown }): Promise<unknown>;
-  };
-  let StdioClientTransport: new (opts: { command: string; args: string[]; env?: Record<string, string> }) => { close?(): Promise<void> };
-  let StreamableHTTPClientTransport: new (url: URL) => { close?(): Promise<void> };
-  let ListToolsResultSchema: { parse: (v: unknown) => unknown };
+  let Client: McpClient;
+  let StdioClientTransport: new (opts: {
+    command: string;
+    args: string[];
+    env?: Record<string, string>;
+  }) => McpTransport;
+  let StreamableHTTPClientTransport: new (url: URL) => McpTransport;
+  let ListToolsResultSchema: unknown;
 
   try {
-    const sdk = await import("@modelcontextprotocol/sdk/client");
-    Client = sdk.Client;
-    StdioClientTransport = sdk.StdioClientTransport;
-    StreamableHTTPClientTransport = sdk.StreamableHTTPClientTransport;
-    ListToolsResultSchema = sdk.ListToolsResultSchema;
+    const clientMod = await import("@modelcontextprotocol/sdk/client");
+    const stdioMod = await import("@modelcontextprotocol/sdk/client/stdio.js");
+    const streamableMod = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
+    const typesMod = await import("@modelcontextprotocol/sdk/types.js");
+    Client = clientMod.Client;
+    StdioClientTransport = stdioMod.StdioClientTransport;
+    StreamableHTTPClientTransport = streamableMod.StreamableHTTPClientTransport;
+    ListToolsResultSchema = typesMod.ListToolsResultSchema;
   } catch (err) {
     log.warn(`MCP SDK not available: ${err}`);
     return null;
@@ -90,16 +111,15 @@ async function connectAndListTools(params: {
 
   const command =
     typeof serverConfig.command === "string" ? serverConfig.command.trim() : undefined;
-  const args = Array.isArray(serverConfig.args)
-    ? serverConfig.args.map((a) => String(a))
-    : [];
+  const args = Array.isArray(serverConfig.args) ? serverConfig.args.map((a) => String(a)) : [];
   const url = typeof serverConfig.url === "string" ? serverConfig.url.trim() : undefined;
-  const env = serverConfig.env && typeof serverConfig.env === "object" ? serverConfig.env : undefined;
+  const envRaw =
+    serverConfig.env && typeof serverConfig.env === "object" ? serverConfig.env : undefined;
+  const env = envRaw
+    ? toEnvRecord({ ...process.env, ...envRaw } as Record<string, string | undefined>)
+    : undefined;
 
-  const client = new Client(
-    { name: "moltbot-mcp", version: "1.0.0" },
-    { capabilities: {} },
-  );
+  const client = new Client({ name: "moltbot-mcp", version: "1.0.0" }, { capabilities: {} });
 
   let transport: { close?: () => Promise<void> };
   try {
@@ -107,7 +127,7 @@ async function connectAndListTools(params: {
       transport = new StdioClientTransport({
         command,
         args,
-        env: env ? { ...process.env, ...env } : undefined,
+        env,
       });
     } else if (url) {
       transport = new StreamableHTTPClientTransport(new URL(url));
@@ -121,16 +141,17 @@ async function connectAndListTools(params: {
   }
 
   try {
-    await client.connect(transport as { start(): Promise<void>; close(): Promise<void> });
+    await client.connect(transport as McpTransport);
   } catch (err) {
     log.warn(`MCP server ${serverKey} connect failed: ${err}`);
     return null;
   }
 
   try {
+    // SDK expects Zod schema for request(); we load it from types.js
     const result = await client.request(
-      { method: "tools/list", params: {} },
-      ListToolsResultSchema as { parse: (v: unknown) => unknown },
+      { method: "tools/list", params: {} as Record<string, unknown> },
+      ListToolsResultSchema as Parameters<InstanceType<McpClient>["request"]>[1],
     );
     const tools = (result as { tools?: McpTool[] }).tools ?? [];
     if (typeof transport.close === "function") {
@@ -153,20 +174,24 @@ async function callMcpTool(params: {
   args: Record<string, unknown>;
 }): Promise<{ content: McpContentItem[]; isError?: boolean }> {
   const { serverKey, serverConfig, toolName, args } = params;
-  let Client: new (a: { name: string; version: string }, b: { capabilities?: object }) => {
-    connect(t: { start(): Promise<void>; close(): Promise<void> }): Promise<void>;
-    request(req: { method: string; params: object }, schema: { parse: (v: unknown) => unknown }): Promise<unknown>;
-  };
-  let StdioClientTransport: new (opts: { command: string; args: string[]; env?: Record<string, string> }) => { close?(): Promise<void> };
-  let StreamableHTTPClientTransport: new (url: URL) => { close?(): Promise<void> };
-  let CallToolResultSchema: { parse: (v: unknown) => unknown };
+  let Client: McpClient;
+  let StdioClientTransport: new (opts: {
+    command: string;
+    args: string[];
+    env?: Record<string, string>;
+  }) => McpTransport;
+  let StreamableHTTPClientTransport: new (url: URL) => McpTransport;
+  let CallToolResultSchema: unknown;
 
   try {
-    const sdk = await import("@modelcontextprotocol/sdk/client");
-    Client = sdk.Client;
-    StdioClientTransport = sdk.StdioClientTransport;
-    StreamableHTTPClientTransport = sdk.StreamableHTTPClientTransport;
-    CallToolResultSchema = sdk.CallToolResultSchema;
+    const clientMod = await import("@modelcontextprotocol/sdk/client");
+    const stdioMod = await import("@modelcontextprotocol/sdk/client/stdio.js");
+    const streamableMod = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
+    const typesMod = await import("@modelcontextprotocol/sdk/types.js");
+    Client = clientMod.Client;
+    StdioClientTransport = stdioMod.StdioClientTransport;
+    StreamableHTTPClientTransport = streamableMod.StreamableHTTPClientTransport;
+    CallToolResultSchema = typesMod.CallToolResultSchema;
   } catch {
     return {
       content: [{ type: "text", text: "MCP SDK not available." }],
@@ -176,16 +201,15 @@ async function callMcpTool(params: {
 
   const command =
     typeof serverConfig.command === "string" ? serverConfig.command.trim() : undefined;
-  const cmdArgs = Array.isArray(serverConfig.args)
-    ? serverConfig.args.map((a) => String(a))
-    : [];
+  const cmdArgs = Array.isArray(serverConfig.args) ? serverConfig.args.map((a) => String(a)) : [];
   const url = typeof serverConfig.url === "string" ? serverConfig.url.trim() : undefined;
-  const env = serverConfig.env && typeof serverConfig.env === "object" ? serverConfig.env : undefined;
+  const envRaw =
+    serverConfig.env && typeof serverConfig.env === "object" ? serverConfig.env : undefined;
+  const env = envRaw
+    ? toEnvRecord({ ...process.env, ...envRaw } as Record<string, string | undefined>)
+    : undefined;
 
-  const client = new Client(
-    { name: "moltbot-mcp", version: "1.0.0" },
-    { capabilities: {} },
-  );
+  const client = new Client({ name: "moltbot-mcp", version: "1.0.0" }, { capabilities: {} });
 
   let transport: { close?: () => Promise<void> };
   try {
@@ -193,7 +217,7 @@ async function callMcpTool(params: {
       transport = new StdioClientTransport({
         command,
         args: cmdArgs,
-        env: env ? { ...process.env, ...env } : undefined,
+        env,
       });
     } else if (url) {
       transport = new StreamableHTTPClientTransport(new URL(url));
@@ -211,7 +235,7 @@ async function callMcpTool(params: {
   }
 
   try {
-    await client.connect(transport as { start(): Promise<void>; close(): Promise<void> });
+    await client.connect(transport as McpTransport);
   } catch (err) {
     return {
       content: [{ type: "text", text: `Connect failed: ${err}` }],
@@ -223,9 +247,9 @@ async function callMcpTool(params: {
     const result = await client.request(
       {
         method: "tools/call",
-        params: { name: toolName, arguments: args ?? {} },
+        params: { name: toolName, arguments: args ?? {} } as Record<string, unknown>,
       },
-      CallToolResultSchema,
+      CallToolResultSchema as Parameters<InstanceType<McpClient>["request"]>[1],
     );
     const payload = result as { content?: McpContentItem[]; isError?: boolean };
     const content = payload.content ?? [];
@@ -248,7 +272,8 @@ async function callMcpTool(params: {
 function mcpInputSchemaToParameters(schema: McpTool["inputSchema"]): Record<string, unknown> {
   if (!schema || typeof schema !== "object") return { type: "object", properties: {} };
   const type = schema.type ?? "object";
-  const properties = schema.properties && typeof schema.properties === "object" ? schema.properties : {};
+  const properties =
+    schema.properties && typeof schema.properties === "object" ? schema.properties : {};
   return { type, properties, ...(schema.required ? { required: schema.required } : {}) };
 }
 
@@ -291,7 +316,7 @@ export async function resolveMcpTools(params: {
         name,
         description,
         parameters,
-        execute: async (_toolCallId, args) => {
+        execute: async (_toolCallId, args): Promise<AgentToolResult<unknown>> => {
           const result = await callMcpTool({
             serverKey: discovered.serverKey,
             serverConfig,
@@ -308,10 +333,11 @@ export async function resolveMcpTools(params: {
               details: converted.details,
             });
           }
-          return {
+          const toolResult: AgentToolResult<unknown> = {
             content: converted.content,
             details: converted.details,
           };
+          return toolResult;
         },
       });
     }

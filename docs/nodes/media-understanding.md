@@ -121,7 +121,7 @@ working option**:
 2) **Gemini CLI** (`gemini`) using `read_many_files`
 3) **Provider keys**
    - Audio: OpenAI → Groq → Deepgram → Google
-   - Image: OpenAI → Anthropic → Google → MiniMax
+   - Image: OpenAI → Anthropic → Google → MiniMax → DeepSeek
    - Video: Google
 
 To disable auto-detection, set:
@@ -141,7 +141,7 @@ Note: Binary detection is best-effort across macOS/Linux/Windows; ensure the CLI
 ## Capabilities (optional)
 If you set `capabilities`, the entry only runs for those media types. For shared
 lists, Moltbot can infer defaults:
-- `openai`, `anthropic`, `minimax`: **image**
+- `openai`, `anthropic`, `minimax`, `deepseek`: **image**
 - `google` (Gemini API): **image + audio + video**
 - `groq`: **audio**
 - `deepgram`: **audio**
@@ -152,17 +152,19 @@ If you omit `capabilities`, the entry is eligible for the list it appears in.
 ## Provider support matrix (Moltbot integrations)
 | Capability | Provider integration | Notes |
 |------------|----------------------|-------|
-| Image | OpenAI / Anthropic / Google / others via `pi-ai` | Any image-capable model in the registry works. |
-| Audio | OpenAI, Groq, Deepgram, Google | Provider transcription (Whisper/Deepgram/Gemini). |
+| Image | OpenAI / Anthropic / Google / MiniMax / DeepSeek / others via `pi-ai` | Any image-capable model in the registry works. |
+| Audio | OpenAI, Groq, Deepgram, Google | Provider transcription (Whisper/Deepgram/Gemini). Add custom entries in `tools.media.models` with `capabilities: ["audio"]`. |
 | Video | Google (Gemini API) | Provider video understanding. |
 
 ## Recommended providers
 **Image**
 - Prefer your active model if it supports images.
-- Good defaults: `openai/gpt-5.2`, `anthropic/claude-opus-4-5`, `google/gemini-3-pro-preview`.
+- Good defaults: `openai/gpt-5.2`, `anthropic/claude-opus-4-5`, `google/gemini-3-pro-preview`, `deepseek/deepseek-vl`.
+- Configure in **Settings → Tools** (media understanding models) or via `tools.media.models` with `capabilities: ["image"]`.
 
 **Audio**
 - `openai/gpt-4o-mini-transcribe`, `groq/whisper-large-v3-turbo`, or `deepgram/nova-3`.
+- Add other speech/transcription models in **Settings → Tools** under media understanding (`tools.media.models` with `capabilities: ["audio"]`).
 - CLI fallback: `whisper-cli` (whisper-cpp) or `whisper`.
 - Deepgram setup: [Deepgram (audio transcription)](/providers/deepgram).
 
