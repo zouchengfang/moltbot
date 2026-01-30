@@ -93,6 +93,21 @@
       - any-glob-to-any-file:
           - "extensions/zalouser/**"
           - "docs/channels/zalouser.md"
+"channel: wecom":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/wecom/**"
+          - "docs/channels/wecom.md"
+"channel: dingtalk":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/dingtalk/**"
+          - "docs/channels/dingtalk.md"
+"channel: email":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/email/**"
+          - "docs/channels/email.md"
 
 "app: android":
   - changed-files:

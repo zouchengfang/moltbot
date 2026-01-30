@@ -1,0 +1,11 @@
+{
+  "name": "@moltbot/dingtalk",
+  "version": "2026.1.27-beta.1",
+  "type": "module",
+  "description": "Moltbot DingTalk (钉钉) notification channel plugin",
+  "moltbot": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

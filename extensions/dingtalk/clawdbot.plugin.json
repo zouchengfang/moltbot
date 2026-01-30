@@ -1,0 +1,26 @@
+{
+  "id": "dingtalk",
+  "channels": [
+    "dingtalk"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "webhookUrl": { "type": "string" },
+      "secret": { "type": "string" },
+      "accounts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "webhookUrl": { "type": "string" },
+            "secret": { "type": "string" },
+            "name": { "type": "string" },
+            "enabled": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

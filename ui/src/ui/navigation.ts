@@ -1,4 +1,5 @@
 import type { IconName } from "./icons.js";
+import { t, type Locale } from "./i18n.js";
 
 export const TAB_GROUPS = [
   { label: "Chat", tabs: ["chat"] },
@@ -129,60 +130,41 @@ export function iconForTab(tab: Tab): IconName {
   }
 }
 
-export function titleForTab(tab: Tab) {
-  switch (tab) {
-    case "overview":
-      return "Overview";
-    case "channels":
-      return "Channels";
-    case "instances":
-      return "Instances";
-    case "sessions":
-      return "Sessions";
-    case "cron":
-      return "Cron Jobs";
-    case "skills":
-      return "Skills";
-    case "nodes":
-      return "Nodes";
-    case "chat":
-      return "Chat";
-    case "config":
-      return "Config";
-    case "debug":
-      return "Debug";
-    case "logs":
-      return "Logs";
-    default:
-      return "Control";
-  }
+const TAB_TITLE_KEYS: Record<Tab, string> = {
+  overview: "nav.title.overview",
+  channels: "nav.title.channels",
+  instances: "nav.title.instances",
+  sessions: "nav.title.sessions",
+  cron: "nav.title.cron",
+  skills: "nav.title.skills",
+  nodes: "nav.title.nodes",
+  chat: "nav.title.chat",
+  config: "nav.title.config",
+  debug: "nav.title.debug",
+  logs: "nav.title.logs",
+};
+
+export function titleForTab(tab: Tab, locale?: Locale): string {
+  const key = TAB_TITLE_KEYS[tab] ?? "nav.title.control";
+  return locale ? t(key, locale) : t(key, "en");
 }
 
-export function subtitleForTab(tab: Tab) {
-  switch (tab) {
-    case "overview":
-      return "Gateway status, entry points, and a fast health read.";
-    case "channels":
-      return "Manage channels and settings.";
-    case "instances":
-      return "Presence beacons from connected clients and nodes.";
-    case "sessions":
-      return "Inspect active sessions and adjust per-session defaults.";
-    case "cron":
-      return "Schedule wakeups and recurring agent runs.";
-    case "skills":
-      return "Manage skill availability and API key injection.";
-    case "nodes":
-      return "Paired devices, capabilities, and command exposure.";
-    case "chat":
-      return "Direct gateway chat session for quick interventions.";
-    case "config":
-      return "Edit ~/.clawdbot/moltbot.json safely.";
-    case "debug":
-      return "Gateway snapshots, events, and manual RPC calls.";
-    case "logs":
-      return "Live tail of the gateway file logs.";
-    default:
-      return "";
-  }
+const TAB_SUBTITLE_KEYS: Record<Tab, string> = {
+  overview: "nav.subtitle.overview",
+  channels: "nav.subtitle.channels",
+  instances: "nav.subtitle.instances",
+  sessions: "nav.subtitle.sessions",
+  cron: "nav.subtitle.cron",
+  skills: "nav.subtitle.skills",
+  nodes: "nav.subtitle.nodes",
+  chat: "nav.subtitle.chat",
+  config: "nav.subtitle.config",
+  debug: "nav.subtitle.debug",
+  logs: "nav.subtitle.logs",
+};
+
+export function subtitleForTab(tab: Tab, locale?: Locale): string {
+  const key = TAB_SUBTITLE_KEYS[tab] ?? "nav.subtitle.control";
+  const text = locale ? t(key, locale) : t(key, "en");
+  return text ?? "";
 }

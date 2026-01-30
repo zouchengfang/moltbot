@@ -4,6 +4,7 @@ import type { GatewayHelloOk } from "../gateway";
 import { formatAgo, formatDurationMs } from "../format";
 import { formatNextRun } from "../presenter";
 import type { UiSettings } from "../storage";
+import { LOCALES, t, type Locale } from "../i18n";
 
 export type OverviewProps = {
   connected: boolean;
@@ -166,10 +167,27 @@ export function renderOverview(props: OverviewProps) {
               }}
             />
           </label>
+          <label class="field">
+            <span>${t("settings.language", props.settings.locale)}</span>
+            <select
+              .value=${props.settings.locale}
+              @change=${(e: Event) => {
+                const v = (e.target as HTMLSelectElement).value as Locale;
+                if (v === "en" || v === "zh-CN") {
+                  props.onSettingsChange({ ...props.settings, locale: v });
+                }
+              }}
+            >
+              ${LOCALES.map(
+                (locale) =>
+                  html`<option value=${locale}>${t(`settings.language.${locale}`, props.settings.locale)}</option>`,
+              )}
+            </select>
+          </label>
         </div>
         <div class="row" style="margin-top: 14px;">
-          <button class="btn" @click=${() => props.onConnect()}>Connect</button>
-          <button class="btn" @click=${() => props.onRefresh()}>Refresh</button>
+          <button class="btn" @click=${() => props.onConnect()}>${t("settings.connect", props.settings.locale)}</button>
+          <button class="btn" @click=${() => props.onRefresh()}>${t("settings.refresh", props.settings.locale)}</button>
           <span class="muted">Click Connect to apply connection changes.</span>
         </div>
       </div>

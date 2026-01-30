@@ -11,6 +11,7 @@ import {
   titleForTab,
   type Tab,
 } from "./navigation";
+import { navGroupLabel, t } from "./i18n";
 import { icons } from "./icons";
 import type { UiSettings } from "./storage";
 import type { ThemeMode } from "./theme";
@@ -141,8 +142,8 @@ export function renderApp(state: AppViewState) {
         <div class="topbar-status">
           <div class="pill">
             <span class="statusDot ${state.connected ? "ok" : ""}"></span>
-            <span>Health</span>
-            <span class="mono">${state.connected ? "OK" : "Offline"}</span>
+            <span>${t("topbar.health", state.settings.locale)}</span>
+            <span class="mono">${state.connected ? t("topbar.ok", state.settings.locale) : t("topbar.offline", state.settings.locale)}</span>
           </div>
           ${renderThemeToggle(state)}
         </div>
@@ -165,7 +166,7 @@ export function renderApp(state: AppViewState) {
                 }}
                 aria-expanded=${!isGroupCollapsed}
               >
-                <span class="nav-label__text">${group.label}</span>
+                <span class="nav-label__text">${navGroupLabel(group.label, state.settings.locale)}</span>
                 <span class="nav-label__chevron">${isGroupCollapsed ? "+" : "−"}</span>
               </button>
               <div class="nav-group__items">
@@ -176,7 +177,7 @@ export function renderApp(state: AppViewState) {
         })}
         <div class="nav-group nav-group--links">
           <div class="nav-label nav-label--static">
-            <span class="nav-label__text">Resources</span>
+            <span class="nav-label__text">${navGroupLabel("Resources", state.settings.locale)}</span>
           </div>
           <div class="nav-group__items">
             <a
@@ -187,7 +188,7 @@ export function renderApp(state: AppViewState) {
               title="Docs (opens in new tab)"
             >
               <span class="nav-item__icon" aria-hidden="true">${icons.book}</span>
-              <span class="nav-item__text">Docs</span>
+              <span class="nav-item__text">${t("topbar.docs", state.settings.locale)}</span>
             </a>
           </div>
         </div>
@@ -195,8 +196,8 @@ export function renderApp(state: AppViewState) {
       <main class="content ${isChat ? "content--chat" : ""}">
         <section class="content-header">
           <div>
-            <div class="page-title">${titleForTab(state.tab)}</div>
-            <div class="page-sub">${subtitleForTab(state.tab)}</div>
+            <div class="page-title">${titleForTab(state.tab, state.settings.locale)}</div>
+            <div class="page-sub">${subtitleForTab(state.tab, state.settings.locale)}</div>
           </div>
           <div class="page-meta">
             ${state.lastError
@@ -520,6 +521,7 @@ export function renderApp(state: AppViewState) {
               searchQuery: state.configSearchQuery,
               activeSection: state.configActiveSection,
               activeSubsection: state.configActiveSubsection,
+              locale: state.settings.locale,
               onRawChange: (next) => {
                 state.configRaw = next;
               },

@@ -1,0 +1,40 @@
+{
+  "id": "email",
+  "channels": [
+    "email"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "host": { "type": "string" },
+      "port": { "type": "number" },
+      "secure": { "type": "boolean" },
+      "auth": {
+        "type": "object",
+        "properties": {
+          "user": { "type": "string" },
+          "pass": { "type": "string" }
+        }
+      },
+      "from": { "type": "string" },
+      "name": { "type": "string" },
+      "enabled": { "type": "boolean" },
+      "accounts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "host": { "type": "string" },
+            "port": { "type": "number" },
+            "secure": { "type": "boolean" },
+            "auth": { "type": "object" },
+            "from": { "type": "string" },
+            "name": { "type": "string" },
+            "enabled": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

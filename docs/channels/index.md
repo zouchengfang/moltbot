@@ -29,6 +29,9 @@ Text is supported everywhere; media and reactions vary by channel.
 - [Twitch](/channels/twitch) — Twitch chat via IRC connection (plugin, installed separately).
 - [Zalo](/channels/zalo) — Zalo Bot API; Vietnam's popular messenger (plugin, installed separately).
 - [Zalo Personal](/channels/zalouser) — Zalo personal account via QR login (plugin, installed separately).
+- [企业微信 (WeCom)](/channels/wecom) — 群机器人 Webhook 通知（仅出站，插件，需单独安装）。
+- [钉钉 (DingTalk)](/channels/dingtalk) — 自定义机器人 Webhook 通知（仅出站，支持加签，插件，需单独安装）。
+- [Email](/channels/email) — SMTP 邮件通知（仅出站，插件，需单独安装）。
 - [WebChat](/web/webchat) — Gateway WebChat UI over WebSocket.
 
 ## Notes
