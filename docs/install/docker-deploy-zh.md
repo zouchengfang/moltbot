@@ -198,6 +198,15 @@ ports:
 - 端口映射若只允许本机访问：使用 `"127.0.0.1:18789:18789"`，通过 SSH 隧道访问；若对外暴露需自行配置防火墙与 TLS。
 - 更多细节见 [Hetzner (Docker VPS)](/platforms/hetzner) 与 [Docker（英文）](/install/docker)。
 
+## 打包/部署时不走代理的地址
+
+使用网络代理（如 HTTP_PROXY/HTTPS_PROXY）进行打包或部署时，以下地址应加入 **NO_PROXY**，不经过代理直连：
+
+- **DeepSeek**：`api.deepseek.com`
+- **Qwen 相关 API**：`chat.qwen.ai`、`portal.qwen.ai`、`dashscope.aliyun.com`
+
+上述已写入 `scripts/deploy-to-app1-server` 的 `.env.app1-server.example` 与 `docker-compose.app1-server.yml` 的默认 NO_PROXY；其他部署场景请自行在环境或 Compose 中设置相同 NO_PROXY。
+
 ## 部署到 app1-server (10.0.55.131)
 
 若将应用部署到内网 app1-server，应用根目录为宿主机 `/zouchengfang/moltbot`，且除 DeepSeek / Qwen API 外需走代理 `10.5.0.8:3128`，可使用专用配置与脚本：

@@ -95,13 +95,17 @@ docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --f
 
 ## 代理与 NO_PROXY
 
-- 容器内设置 `HTTP_PROXY` / `HTTPS_PROXY` 为 `http://10.5.0.8:3128`
-- `NO_PROXY` 包含（以下不走代理）：
-  - DeepSeek / Qwen 相关：`api.deepseek.com`、`chat.qwen.ai`、`portal.qwen.ai`、`dashscope.aliyun.com`
-  - 本地网段：`10.0.55.0/24`、`10.0.66.0/24`、`10.8.0.0/24`、`10.5.0.0/16`
-  - 以 `.cn` 结尾的域名（`.cn`）
+打包部署时，**以下地址不使用网络代理**（已写入 NO_PROXY）：
 
-配置来自 `docker-compose.app1-server.yml` 与 `.env.app1-server.example`。
+- **DeepSeek**：`api.deepseek.com`
+- **Qwen API**：`chat.qwen.ai`、`portal.qwen.ai`、`dashscope.aliyun.com`
+
+此外 NO_PROXY 还包含本地网段与 `.cn`，便于直连内网与国内域名。
+
+- 容器内设置 `HTTP_PROXY` / `HTTPS_PROXY` 为 `http://10.5.0.8:3128`
+- `NO_PROXY` 完整默认值：`api.deepseek.com,chat.qwen.ai,portal.qwen.ai,dashscope.aliyun.com,10.0.55.0/24,10.0.66.0/24,10.8.0.0/24,10.5.0.0/16,.cn`
+
+配置来自 `docker-compose.app1-server.yml` 与 `.env.app1-server.example`。详见 [Docker 部署（中文）](/install/docker-deploy-zh#打包部署时不走代理的地址)。
 
 ## 首次登录
 

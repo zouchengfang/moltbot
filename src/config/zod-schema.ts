@@ -184,13 +184,29 @@ export const MoltbotSchema = z
         profiles: z
           .record(
             z.string(),
-            z
-              .object({
-                provider: z.string(),
-                mode: z.union([z.literal("api_key"), z.literal("oauth"), z.literal("token")]),
-                email: z.string().optional(),
-              })
-              .strict(),
+            z.preprocess(
+              (val) => {
+                if (val != null && typeof val === "object" && !Array.isArray(val)) {
+                  const { apiKey: _dropped, ...rest } = val as Record<string, unknown>;
+                  return rest;
+                }
+                return val;
+              },
+              z
+                .object({
+                  provider: z.string(),
+                  mode: z
+                    .union([
+                      z.literal("api_key"),
+                      z.literal("oauth"),
+                      z.literal("token"),
+                      z.literal("api-key"),
+                    ])
+                    .transform((m) => (m === "api-key" ? "api_key" : m)),
+                  email: z.string().optional(),
+                })
+                .strict(),
+            ),
           )
           .optional(),
         order: z.record(z.string(), z.array(z.string())).optional(),
