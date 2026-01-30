@@ -124,6 +124,24 @@ Moltbot ships with the pi‑ai catalog. These providers require **no**
 Use `models.providers` (or `models.json`) to add **custom** providers or
 OpenAI/Anthropic‑compatible proxies.
 
+In **Settings → Models → Providers** you can add any OpenAI-compatible third-party
+provider: create a provider (e.g. `deepseek` or a custom name), set **Base Url** to the
+API endpoint, **API Type** to `openai-completions`, and **API Key** (or configure the key
+in **Authentication**). The form help text for Providers and Base Url describes
+DeepSeek and similar APIs.
+
+### DeepSeek (and other OpenAI-compatible APIs)
+
+DeepSeek exposes an OpenAI-compatible chat completions API. You can add it via onboarding
+(`moltbot onboard --auth-choice deepseek-api-key`) or manually in **Settings → Models**:
+
+- Provider id: `deepseek` (or any name)
+- Base Url: `https://api.deepseek.com/v1`
+- API Type: `openai-completions`
+- API Key: your DeepSeek API key (or set `DEEPSEEK_API_KEY` / use Authentication)
+
+Model refs: `deepseek/deepseek-chat`, `deepseek/deepseek-reasoner`, `deepseek/deepseek-vl` (vision).
+
 ### Moonshot AI (Kimi)
 
 Moonshot uses OpenAI-compatible endpoints, so configure it as a custom provider:

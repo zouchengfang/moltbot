@@ -91,6 +91,10 @@ export function resolveImageModelConfigForTool(params: {
     provider: "anthropic",
     agentDir: params.agentDir,
   });
+  const deepseekOk = hasAuthForProvider({
+    provider: "deepseek",
+    agentDir: params.agentDir,
+  });
 
   const fallbacks: string[] = [];
   const addFallback = (modelRef: string | null) => {
@@ -111,9 +115,11 @@ export function resolveImageModelConfigForTool(params: {
 
   let preferred: string | null = null;
 
-  // MiniMax users: always try the canonical vision model first when auth exists.
+  // Prefer the provider's canonical vision model when auth exists.
   if (primary.provider === "minimax" && providerOk) {
     preferred = "minimax/MiniMax-VL-01";
+  } else if (primary.provider === "deepseek" && providerOk) {
+    preferred = providerVisionFromConfig ?? "deepseek/deepseek-vl";
   } else if (providerOk && providerVisionFromConfig) {
     preferred = providerVisionFromConfig;
   } else if (primary.provider === "openai" && openaiOk) {
@@ -125,6 +131,7 @@ export function resolveImageModelConfigForTool(params: {
   if (preferred?.trim()) {
     if (openaiOk) addFallback("openai/gpt-5-mini");
     if (anthropicOk) addFallback("anthropic/claude-opus-4-5");
+    if (deepseekOk) addFallback("deepseek/deepseek-vl");
     // Don't duplicate primary in fallbacks.
     const pruned = fallbacks.filter((ref) => ref !== preferred);
     return {
@@ -136,13 +143,21 @@ export function resolveImageModelConfigForTool(params: {
   // Cross-provider fallback when we can't pair with the primary provider.
   if (openaiOk) {
     if (anthropicOk) addFallback("anthropic/claude-opus-4-5");
+    if (deepseekOk) addFallback("deepseek/deepseek-vl");
     return {
       primary: "openai/gpt-5-mini",
       ...(fallbacks.length ? { fallbacks } : {}),
     };
   }
   if (anthropicOk) {
-    return { primary: "anthropic/claude-opus-4-5" };
+    if (deepseekOk) addFallback("deepseek/deepseek-vl");
+    return {
+      primary: "anthropic/claude-opus-4-5",
+      ...(fallbacks.length ? { fallbacks } : {}),
+    };
+  }
+  if (deepseekOk) {
+    return { primary: "deepseek/deepseek-vl" };
   }
 
   return null;

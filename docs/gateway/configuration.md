@@ -1583,7 +1583,7 @@ Defaults for Talk mode (macOS/iOS/Android). Voice IDs fall back to `ELEVENLABS_V
 Controls the embedded agent runtime (model/thinking/verbose/timeouts).
 `agents.defaults.models` defines the configured model catalog (and acts as the allowlist for `/model`).
 `agents.defaults.model.primary` sets the default model; `agents.defaults.model.fallbacks` are global failovers.
-`agents.defaults.imageModel` is optional and is **only used if the primary model lacks image input**.
+`agents.defaults.imageModel` is optional and is **only used if the primary model lacks image input**. You can set **any** vision-capable provider/model: `agents.defaults.imageModel.primary` and `agents.defaults.imageModel.fallbacks` (e.g. `deepseek/deepseek-vl`, `openai/gpt-5-mini`, `minimax/MiniMax-VL-01`). For inbound image understanding, use `tools.media.image.models` to list provider/model entries.
 Each `agents.defaults.models` entry can include:
 - `alias` (optional model shortcut, e.g. `/opus`).
 - `params` (optional provider-specific API params passed through to the model request).

@@ -45,7 +45,7 @@ setup-token` also supported).
 ## Config keys (overview)
 
 - `agents.defaults.model.primary` and `agents.defaults.model.fallbacks`
-- `agents.defaults.imageModel.primary` and `agents.defaults.imageModel.fallbacks`
+- `agents.defaults.imageModel.primary` and `agents.defaults.imageModel.fallbacks` — you can set **any** vision-capable provider/model (e.g. `deepseek/deepseek-vl`, `openai/gpt-5-mini`, `minimax/MiniMax-VL-01`, `anthropic/claude-opus-4-5`). In **Settings → Agents → defaults**, configure Image Model and Image Model Fallbacks.
 - `agents.defaults.models` (allowlist + aliases + provider params)
 - `models.providers` (custom providers written into `models.json`)
 

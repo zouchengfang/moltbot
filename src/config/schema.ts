@@ -362,6 +362,11 @@ const FIELD_LABELS: Record<string, string> = {
   "plugins.installs.*.installPath": "Plugin Install Path",
   "plugins.installs.*.version": "Plugin Install Version",
   "plugins.installs.*.installedAt": "Plugin Install Time",
+  "models.providers": "Providers",
+  "models.providers.*.baseUrl": "Base Url",
+  "models.providers.*.api": "API Type",
+  "models.providers.*.apiKey": "API Key",
+  "models.providers.*.models": "Models",
 };
 
 const FIELD_HELP: Record<string, string> = {
@@ -570,12 +575,19 @@ const FIELD_HELP: Record<string, string> = {
   "plugins.installs.*.installedAt": "ISO timestamp of last install/update.",
   "agents.list.*.identity.avatar":
     "Agent avatar (workspace-relative path, http(s) URL, or data URI).",
+  "models.providers":
+    "Add model providers (OpenAI, DeepSeek, etc.). For OpenAI-compatible APIs (e.g. DeepSeek): add a provider with Base Url https://api.deepseek.com/v1, API type openai-completions, and API key in Authentication or here.",
+  "models.providers.*.baseUrl":
+    "API base URL (e.g. https://api.openai.com/v1, or https://api.deepseek.com/v1 for DeepSeek).",
+  "models.providers.*.api":
+    "API type: openai-completions for OpenAI-compatible (DeepSeek, Moonshot, etc.), openai-responses for OpenAI Responses API.",
   "agents.defaults.model.primary": "Primary model (provider/model).",
   "agents.defaults.model.fallbacks":
     "Ordered fallback models (provider/model). Used when the primary model fails.",
   "agents.defaults.imageModel.primary":
-    "Optional image model (provider/model) used when the primary model lacks image input.",
-  "agents.defaults.imageModel.fallbacks": "Ordered fallback image models (provider/model).",
+    "Primary image/vision model (provider/model). Any vision-capable model in your providers: e.g. deepseek/deepseek-vl, openai/gpt-5-mini, minimax/MiniMax-VL-01, anthropic/claude-opus-4-5.",
+  "agents.defaults.imageModel.fallbacks":
+    "Ordered fallback image models (provider/model). Used when the primary image model fails. List any provider/model that supports image input.",
   "agents.defaults.cliBackends": "Optional CLI backends for text-only fallback (claude-cli, etc.).",
   "agents.defaults.humanDelay.mode": 'Delay style for block replies ("off", "natural", "custom").',
   "agents.defaults.humanDelay.minMs": "Minimum delay in ms for custom humanDelay (default: 800).",
