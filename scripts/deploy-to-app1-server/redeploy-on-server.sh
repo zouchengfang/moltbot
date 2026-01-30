@@ -36,6 +36,8 @@ if [[ -n "${HTTP_PROXY:-}" ]] || [[ -n "${http_proxy:-}" ]]; then
   BUILD_ARGS+=(--build-arg "NO_PROXY=$BUILD_NO_PROXY")
   echo "==> Using proxy for build (only GitHub etc.; npm/bun direct)"
 fi
+# BuildKit required for pnpm store cache (avoids re-downloading deps when only source changes)
+export DOCKER_BUILDKIT=1
 docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS[@]}"
 
 echo "==> Recreating and starting gateway"

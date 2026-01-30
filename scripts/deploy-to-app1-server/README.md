@@ -77,7 +77,7 @@ ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-serve
 - **Node 基础镜像**：`docker.1ms.run/library/node:22-bookworm`（1ms Docker Hub 镜像，无需认证）
 - **npm/pnpm 源**：`https://registry.npmmirror.com`（npmmirror 淘宝源）
 
-`remote.sh` 与 `redeploy-on-server.sh` 默认 `USE_CHINA_MIRROR=1`。若使用海外环境构建或当前国内镜像不可用，可关闭国内镜像（改走代理拉取 Docker Hub）：
+`remote.sh` 与 `redeploy-on-server.sh` 默认 `USE_CHINA_MIRROR=1`。若使用海外环境构建或当前国内镜像不可用，可关闭国内镜像（改走代理拉取 Docker Hub），例如：
 
 ```bash
 USE_CHINA_MIRROR=0 ./scripts/deploy-to-app1-server/redeploy-on-server.sh
@@ -92,6 +92,10 @@ docker build -t moltbot:local -f Dockerfile . \
   --build-arg PNPM_REGISTRY=https://registry.npmmirror.com
 docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway
 ```
+
+## 依赖缓存（BuildKit）
+
+构建脚本会启用 **BuildKit**（`DOCKER_BUILDKIT=1`），通过 pnpm store 的 cache mount，在仅源码变更时复用已下载依赖，避免每次重新拉取 npm 包。
 
 ## 代理与 NO_PROXY
 

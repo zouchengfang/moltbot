@@ -69,7 +69,8 @@ do_remote() {
       grep -q '^CLAWDBOT_GATEWAY_TOKEN=' .env && sed -i \"s/^CLAWDBOT_GATEWAY_TOKEN=.*/CLAWDBOT_GATEWAY_TOKEN=\$CLAWDBOT_GATEWAY_TOKEN/\" .env || echo \"CLAWDBOT_GATEWAY_TOKEN=\$CLAWDBOT_GATEWAY_TOKEN\" >> .env
       export CLAWDBOT_GATEWAY_TOKEN
     fi
-    echo '==> Building image'
+    echo '==> Building image (BuildKit for pnpm cache)'
+    export DOCKER_BUILDKIT=1
     docker build -t moltbot:local -f Dockerfile .
     echo '==> Starting gateway (compose + app1-server override)'
     docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d moltbot-gateway
