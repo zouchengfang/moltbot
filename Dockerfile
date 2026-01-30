@@ -40,6 +40,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 COPY . .
+# Re-apply registry after COPY so ui:install/ui:build use same mirror (COPY overwrites .npmrc)
+ARG PNPM_REGISTRY=
+RUN if [ -n "$PNPM_REGISTRY" ]; then echo "registry=$PNPM_REGISTRY" >> .npmrc; fi
 RUN CLAWDBOT_A2UI_SKIP_MISSING=1 pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV CLAWDBOT_PREFER_PNPM=1
