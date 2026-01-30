@@ -38,6 +38,7 @@ import {
   ensurePiCompactionReserveTokens,
   resolveCompactionReserveTokensFloor,
 } from "../../pi-settings.js";
+import { resolveMcpTools } from "../../tools/mcp-tools.js";
 import { createMoltbotCodingTools } from "../../pi-tools.js";
 import { resolveSandboxContext } from "../../sandbox.js";
 import { guardSessionManager } from "../../session-tool-result-guard-wrapper.js";
@@ -199,6 +200,12 @@ export async function runEmbeddedAttempt(
 
     // Check if the model supports native image input
     const modelHasVision = params.model.input?.includes("image") ?? false;
+    const mcpTools = params.disableTools
+      ? []
+      : await resolveMcpTools({
+          workspaceDir: effectiveWorkspace,
+          config: params.config,
+        });
     const toolsRaw = params.disableTools
       ? []
       : createMoltbotCodingTools({
@@ -232,6 +239,7 @@ export async function runEmbeddedAttempt(
           replyToMode: params.replyToMode,
           hasRepliedRef: params.hasRepliedRef,
           modelHasVision,
+          mcpTools,
         });
     const tools = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
     logToolSchemasForGoogle({ tools, provider: params.provider });

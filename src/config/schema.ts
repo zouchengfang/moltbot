@@ -936,19 +936,6 @@ function applyChannelSchemas(schema: ConfigSchema, channels: ChannelUiMetadata[]
 
 let cachedBase: ConfigSchemaResponse | null = null;
 
-function stripChannelSchema(schema: ConfigSchema): ConfigSchema {
-  const next = cloneSchema(schema);
-  const root = asSchemaObject(next);
-  if (!root || !root.properties) return next;
-  const channelsNode = asSchemaObject(root.properties.channels);
-  if (channelsNode) {
-    channelsNode.properties = {};
-    channelsNode.required = [];
-    channelsNode.additionalProperties = true;
-  }
-  return next;
-}
-
 function buildBaseConfigSchema(): ConfigSchemaResponse {
   if (cachedBase) return cachedBase;
   const schema = MoltbotSchema.toJSONSchema({
@@ -957,8 +944,11 @@ function buildBaseConfigSchema(): ConfigSchemaResponse {
   });
   schema.title = "MoltbotConfig";
   const hints = applySensitiveHints(buildBaseHints());
+  // Keep channels.properties from Zod (whatsapp, telegram, discord, etc.) so the
+  // config UI shows all supported channel subsections; applyChannelSchemas merges
+  // plugin configSchema when a channel extension is loaded.
   const next = {
-    schema: stripChannelSchema(schema),
+    schema,
     uiHints: hints,
     version: VERSION,
     generatedAt: new Date().toISOString(),

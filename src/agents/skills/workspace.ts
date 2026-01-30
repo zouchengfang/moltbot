@@ -17,6 +17,7 @@ import {
   resolveMoltbotMetadata,
   resolveSkillInvocationPolicy,
 } from "./frontmatter.js";
+import { loadMcpSkillEntries, SOURCE_CURSOR_MCP } from "./mcp-cursor.js";
 import { resolvePluginSkillDirs } from "./plugin-skills.js";
 import { serializeByKey } from "./serialize.js";
 import type {
@@ -148,15 +149,23 @@ function loadSkillEntries(
     dir: workspaceSkillsDir,
     source: "moltbot-workspace",
   });
+  const mcpEntries = loadMcpSkillEntries(workspaceDir, opts);
+  const mcpSkills = mcpEntries.map((e) => e.skill);
 
   const merged = new Map<string, Skill>();
-  // Precedence: extra < bundled < managed < workspace
+  // Precedence: extra < mcp < bundled < managed < workspace (workspace wins on name clash)
   for (const skill of extraSkills) merged.set(skill.name, skill);
+  for (const skill of mcpSkills) merged.set(skill.name, skill);
   for (const skill of bundledSkills) merged.set(skill.name, skill);
   for (const skill of managedSkills) merged.set(skill.name, skill);
   for (const skill of workspaceSkills) merged.set(skill.name, skill);
 
+  const entryBySkillName = new Map<string, SkillEntry>();
+  for (const e of mcpEntries) entryBySkillName.set(e.skill.name, e);
+
   const skillEntries: SkillEntry[] = Array.from(merged.values()).map((skill) => {
+    const mcpEntry = entryBySkillName.get(skill.name);
+    if (mcpEntry) return mcpEntry;
     let frontmatter: ParsedSkillFrontmatter = {};
     try {
       const raw = fs.readFileSync(skill.filePath, "utf-8");
@@ -286,7 +295,7 @@ export async function syncSkillsToWorkspace(params: {
       config: params.config,
       managedSkillsDir: params.managedSkillsDir,
       bundledSkillsDir: params.bundledSkillsDir,
-    });
+    }).filter((entry) => entry.skill.source !== SOURCE_CURSOR_MCP);
 
     await fsp.rm(targetSkillsDir, { recursive: true, force: true });
     await fsp.mkdir(targetSkillsDir, { recursive: true });

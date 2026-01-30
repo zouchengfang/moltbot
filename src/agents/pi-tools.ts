@@ -150,6 +150,8 @@ export function createMoltbotCodingTools(options?: {
   hasRepliedRef?: { value: boolean };
   /** If true, the model has native vision capability */
   modelHasVision?: boolean;
+  /** MCP tools from Cursor config (resolved async by caller and passed in). */
+  mcpTools?: AnyAgentTool[];
 }): AnyAgentTool[] {
   const execToolName = "exec";
   const sandbox = options?.sandbox?.enabled ? options.sandbox : undefined;
@@ -334,6 +336,7 @@ export function createMoltbotCodingTools(options?: {
       hasRepliedRef: options?.hasRepliedRef,
       modelHasVision: options?.modelHasVision,
       requesterAgentIdOverride: agentId,
+      mcpTools: options?.mcpTools,
     }),
   ];
   const coreToolNames = new Set(

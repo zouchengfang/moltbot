@@ -5,6 +5,11 @@ export type SkillConfig = {
   config?: Record<string, unknown>;
 };
 
+export type SkillsMcpConfig = {
+  /** Include Cursor MCP servers (from .cursor/mcp.json and ~/.cursor/mcp.json) as skills. Default true. */
+  enabled?: boolean;
+};
+
 export type SkillsLoadConfig = {
   /**
    * Additional skill folders to scan (lowest precedence).
@@ -25,6 +30,8 @@ export type SkillsInstallConfig = {
 export type SkillsConfig = {
   /** Optional bundled-skill allowlist (only affects bundled skills). */
   allowBundled?: string[];
+  /** Cursor MCP server mode: expose locally configured MCP servers as skills. */
+  mcp?: SkillsMcpConfig;
   load?: SkillsLoadConfig;
   install?: SkillsInstallConfig;
   entries?: Record<string, SkillConfig>;

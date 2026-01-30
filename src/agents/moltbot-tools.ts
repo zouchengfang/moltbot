@@ -53,6 +53,8 @@ export function createMoltbotTools(options?: {
   modelHasVision?: boolean;
   /** Explicit agent ID override for cron/hook sessions. */
   requesterAgentIdOverride?: string;
+  /** MCP tools resolved from Cursor MCP config (injected by async callers). */
+  mcpTools?: AnyAgentTool[];
 }): AnyAgentTool[] {
   const imageTool = options?.agentDir?.trim()
     ? createImageTool({
@@ -157,5 +159,6 @@ export function createMoltbotTools(options?: {
     toolAllowlist: options?.pluginToolAllowlist,
   });
 
-  return [...tools, ...pluginTools];
+  const mcpTools = options?.mcpTools ?? [];
+  return [...tools, ...pluginTools, ...mcpTools];
 }
