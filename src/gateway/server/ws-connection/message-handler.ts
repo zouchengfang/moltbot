@@ -25,6 +25,7 @@ import { isGatewayCliClient, isWebchatClient } from "../../../utils/message-chan
 import type { ResolvedGatewayAuth } from "../../auth.js";
 import { authorizeGatewayConnect, isLocalDirectRequest } from "../../auth.js";
 import { loadConfig } from "../../../config/config.js";
+import { isTruthyEnvValue } from "../../../infra/env.js";
 import { buildDeviceAuthPayload } from "../../device-auth.js";
 import { isLoopbackAddress, isTrustedProxyAddress, resolveGatewayClientIp } from "../../net.js";
 import { resolveNodeCommandAllowlist } from "../../node-command-policy.js";
@@ -369,7 +370,9 @@ export function attachGatewayWsMessageHandler(params: {
         const hasSharedAuth = hasTokenAuth || hasPasswordAuth;
         const isControlUi = connectParams.client.id === GATEWAY_CLIENT_IDS.CONTROL_UI;
         const allowInsecureControlUi =
-          isControlUi && configSnapshot.gateway?.controlUi?.allowInsecureAuth === true;
+          isControlUi &&
+          (configSnapshot.gateway?.controlUi?.allowInsecureAuth === true ||
+            isTruthyEnvValue(process.env.CLAWDBOT_GATEWAY_CONTROLUI_ALLOW_INSECURE_AUTH));
         const disableControlUiDeviceAuth =
           isControlUi && configSnapshot.gateway?.controlUi?.dangerouslyDisableDeviceAuth === true;
         const allowControlUiBypass = allowInsecureControlUi || disableControlUiDeviceAuth;

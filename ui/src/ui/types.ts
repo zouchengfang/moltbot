@@ -288,6 +288,7 @@ export type ConfigUiHint = {
   order?: number;
   advanced?: boolean;
   sensitive?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
   itemTemplate?: unknown;
 };

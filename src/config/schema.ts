@@ -1,4 +1,5 @@
 import { CHANNEL_IDS } from "../channels/registry.js";
+import { CONTROL_UI_READONLY_PREFIXES } from "./merge-patch.js";
 import { VERSION } from "../version.js";
 import { MoltbotSchema } from "./zod-schema.js";
 
@@ -9,6 +10,7 @@ export type ConfigUiHint = {
   order?: number;
   advanced?: boolean;
   sensitive?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
   itemTemplate?: unknown;
 };
@@ -781,6 +783,21 @@ function applySensitiveHints(hints: ConfigUiHints): ConfigUiHints {
   return next;
 }
 
+function isReadOnlyPath(path: string): boolean {
+  if (CONTROL_UI_READONLY_PREFIXES.some((p) => path === p || path.startsWith(`${p}.`))) return true;
+  return /^agents\.list\.\d+\.(model|models|imageModel)(\.|$)/.test(path);
+}
+
+function applyReadOnlyHints(hints: ConfigUiHints): ConfigUiHints {
+  const next = { ...hints };
+  for (const key of Object.keys(next)) {
+    if (isReadOnlyPath(key)) {
+      next[key] = { ...next[key], readOnly: true };
+    }
+  }
+  return next;
+}
+
 function applyPluginHints(hints: ConfigUiHints, plugins: PluginUiMetadata[]): ConfigUiHints {
   const next: ConfigUiHints = { ...hints };
   for (const plugin of plugins) {
@@ -955,7 +972,7 @@ function buildBaseConfigSchema(): ConfigSchemaResponse {
     unrepresentable: "any",
   });
   schema.title = "MoltbotConfig";
-  const hints = applySensitiveHints(buildBaseHints());
+  const hints = applyReadOnlyHints(applySensitiveHints(buildBaseHints()));
   // Keep channels.properties from Zod (whatsapp, telegram, discord, etc.) so the
   // config UI shows all supported channel subsections; applyChannelSchemas merges
   // plugin configSchema when a channel extension is loaded.
@@ -977,10 +994,12 @@ export function buildConfigSchema(params?: {
   const plugins = params?.plugins ?? [];
   const channels = params?.channels ?? [];
   if (plugins.length === 0 && channels.length === 0) return base;
-  const mergedHints = applySensitiveHints(
-    applyHeartbeatTargetHints(
-      applyChannelHints(applyPluginHints(base.uiHints, plugins), channels),
-      channels,
+  const mergedHints = applyReadOnlyHints(
+    applySensitiveHints(
+      applyHeartbeatTargetHints(
+        applyChannelHints(applyPluginHints(base.uiHints, plugins), channels),
+        channels,
+      ),
     ),
   );
   const mergedSchema = applyChannelSchemas(applyPluginSchemas(base.schema, plugins), channels);

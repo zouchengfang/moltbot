@@ -7,7 +7,10 @@ import {
   authorizeGatewaySigusr1Restart,
   setGatewaySigusr1RestartPolicy,
 } from "../infra/restart.js";
-import { setCommandLaneConcurrency } from "../process/command-queue.js";
+import {
+  setCommandLaneConcurrency,
+  setSessionLaneDefaultMaxConcurrent,
+} from "../process/command-queue.js";
 import { resolveAgentMaxConcurrent, resolveSubagentMaxConcurrent } from "../config/agent-limits.js";
 import { CommandLane } from "../process/lanes.js";
 import { isTruthyEnvValue } from "../infra/env.js";
@@ -130,6 +133,7 @@ export function createGatewayReloadHandlers(params: {
     setCommandLaneConcurrency(CommandLane.Cron, nextConfig.cron?.maxConcurrentRuns ?? 1);
     setCommandLaneConcurrency(CommandLane.Main, resolveAgentMaxConcurrent(nextConfig));
     setCommandLaneConcurrency(CommandLane.Subagent, resolveSubagentMaxConcurrent(nextConfig));
+    setSessionLaneDefaultMaxConcurrent(resolveAgentMaxConcurrent(nextConfig));
 
     if (plan.hotReasons.length > 0) {
       params.logReload.info(`config hot reload applied (${plan.hotReasons.join(", ")})`);

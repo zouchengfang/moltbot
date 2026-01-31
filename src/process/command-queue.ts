@@ -23,6 +23,7 @@ type LaneState = {
   draining: boolean;
 };
 
+let sessionLaneDefaultMaxConcurrent = 1;
 const lanes = new Map<string, LaneState>();
 
 function getLaneState(lane: string): LaneState {
@@ -32,7 +33,7 @@ function getLaneState(lane: string): LaneState {
     lane,
     queue: [],
     active: 0,
-    maxConcurrent: 1,
+    maxConcurrent: lane.startsWith("session:") ? sessionLaneDefaultMaxConcurrent : 1,
     draining: false,
   };
   lanes.set(lane, created);
@@ -83,6 +84,10 @@ function drainLane(lane: string) {
   };
 
   pump();
+}
+
+export function setSessionLaneDefaultMaxConcurrent(n: number): void {
+  sessionLaneDefaultMaxConcurrent = Math.max(1, Math.floor(n));
 }
 
 export function setCommandLaneConcurrency(lane: string, maxConcurrent: number) {

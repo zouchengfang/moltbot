@@ -52,6 +52,7 @@ export function renderNode(params: {
   const label = hint?.label ?? schema.title ?? humanize(String(path.at(-1)));
   const help = hint?.help ?? schema.description;
   const key = pathKey(path);
+  const effectiveDisabled = disabled || hint?.readOnly === true;
 
   if (unsupported.has(key)) {
     return html`<div class="cfg-field cfg-field--error">
@@ -68,7 +69,7 @@ export function renderNode(params: {
     );
 
     if (nonNull.length === 1) {
-      return renderNode({ ...params, schema: nonNull[0] });
+      return renderNode({ ...params, schema: nonNull[0], disabled: effectiveDisabled });
     }
 
     // Check if it's a set of literal values (enum-like)
@@ -105,7 +106,7 @@ export function renderNode(params: {
 
     if (allLiterals && literals.length > 5) {
       // Use dropdown for larger sets
-      return renderSelect({ ...params, options: literals, value: value ?? schema.default });
+      return renderSelect({ ...params, disabled: effectiveDisabled, options: literals, value: value ?? schema.default });
     }
 
     // Handle mixed primitive types
@@ -124,6 +125,7 @@ export function renderNode(params: {
       if (hasBoolean && normalizedTypes.size === 1) {
         return renderNode({
           ...params,
+          disabled: effectiveDisabled,
           schema: { ...schema, type: "boolean", anyOf: undefined, oneOf: undefined },
         });
       }
@@ -166,19 +168,19 @@ export function renderNode(params: {
 
   // Object type - collapsible section
   if (type === "object") {
-    return renderObject(params);
+    return renderObject({ ...params, disabled: effectiveDisabled });
   }
 
   // Array type
   if (type === "array") {
-    return renderArray(params);
+    return renderArray({ ...params, disabled: effectiveDisabled });
   }
 
   // Boolean - toggle row
   if (type === "boolean") {
     const displayValue = typeof value === "boolean" ? value : typeof schema.default === "boolean" ? schema.default : false;
     return html`
-      <label class="cfg-toggle-row ${disabled ? 'disabled' : ''}">
+      <label class="cfg-toggle-row ${effectiveDisabled ? 'disabled' : ''}">
         <div class="cfg-toggle-row__content">
           <span class="cfg-toggle-row__label">${label}</span>
           ${help ? html`<span class="cfg-toggle-row__help">${help}</span>` : nothing}
@@ -187,7 +189,7 @@ export function renderNode(params: {
           <input
             type="checkbox"
             .checked=${displayValue}
-            ?disabled=${disabled}
+            ?disabled=${effectiveDisabled}
             @change=${(e: Event) => onPatch(path, (e.target as HTMLInputElement).checked)}
           />
           <span class="cfg-toggle__track"></span>
@@ -198,12 +200,12 @@ export function renderNode(params: {
 
   // Number/Integer
   if (type === "number" || type === "integer") {
-    return renderNumberInput(params);
+    return renderNumberInput({ ...params, disabled: effectiveDisabled });
   }
 
   // String
   if (type === "string") {
-    return renderTextInput({ ...params, inputType: "text" });
+    return renderTextInput({ ...params, disabled: effectiveDisabled, inputType: "text" });
   }
 
   // Fallback

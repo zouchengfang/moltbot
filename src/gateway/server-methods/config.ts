@@ -9,7 +9,7 @@ import {
   writeConfigFile,
 } from "../../config/config.js";
 import { applyLegacyMigrations } from "../../config/legacy.js";
-import { applyMergePatch } from "../../config/merge-patch.js";
+import { applyMergePatch, stripProtectedPaths } from "../../config/merge-patch.js";
 import { buildConfigSchema } from "../../config/schema.js";
 import { scheduleGatewaySigusr1Restart } from "../../infra/restart.js";
 import {
@@ -29,6 +29,7 @@ import {
   validateConfigSchemaParams,
   validateConfigSetParams,
 } from "../protocol/index.js";
+import { GATEWAY_CLIENT_IDS } from "../protocol/client-info.js";
 import type { GatewayRequestHandlers, RespondFn } from "./types.js";
 
 function resolveBaseHash(params: unknown): string | null {
@@ -140,7 +141,7 @@ export const configHandlers: GatewayRequestHandlers = {
     });
     respond(true, schema, undefined);
   },
-  "config.set": async ({ params, respond }) => {
+  "config.set": async ({ params, respond, client }) => {
     if (!validateConfigSetParams(params)) {
       respond(
         false,
@@ -181,18 +182,42 @@ export const configHandlers: GatewayRequestHandlers = {
       );
       return;
     }
-    await writeConfigFile(validated.config);
+    let incoming = validated.config;
+    const isControlUi = client?.connect?.client?.id === GATEWAY_CLIENT_IDS.CONTROL_UI;
+    if (isControlUi) {
+      incoming = stripProtectedPaths(incoming) as typeof validated.config;
+    }
+    // Merge with existing config to avoid losing fields when client sends partial config.
+    const toWrite =
+      snapshot.exists && snapshot.valid && snapshot.config
+        ? (applyMergePatch(
+            snapshot.config,
+            incoming,
+          ) as import("../../config/types.js").MoltbotConfig)
+        : incoming;
+    const revalidated = validateConfigObjectWithPlugins(toWrite);
+    if (!revalidated.ok) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, "invalid config after merge", {
+          details: { issues: revalidated.issues },
+        }),
+      );
+      return;
+    }
+    await writeConfigFile(revalidated.config);
     respond(
       true,
       {
         ok: true,
         path: CONFIG_PATH,
-        config: validated.config,
+        config: revalidated.config,
       },
       undefined,
     );
   },
-  "config.patch": async ({ params, respond }) => {
+  "config.patch": async ({ params, respond, client }) => {
     if (!validateConfigPatchParams(params)) {
       respond(
         false,
@@ -245,7 +270,12 @@ export const configHandlers: GatewayRequestHandlers = {
       );
       return;
     }
-    const merged = applyMergePatch(snapshot.config, parsedRes.parsed);
+    let patch = parsedRes.parsed as Record<string, unknown>;
+    const isControlUi = client?.connect?.client?.id === GATEWAY_CLIENT_IDS.CONTROL_UI;
+    if (isControlUi) {
+      patch = stripProtectedPaths(patch) as Record<string, unknown>;
+    }
+    const merged = applyMergePatch(snapshot.config, patch);
     const migrated = applyLegacyMigrations(merged);
     const resolved = migrated.next ?? merged;
     const validated = validateConfigObjectWithPlugins(resolved);
@@ -312,7 +342,7 @@ export const configHandlers: GatewayRequestHandlers = {
       undefined,
     );
   },
-  "config.apply": async ({ params, respond }) => {
+  "config.apply": async ({ params, respond, client }) => {
     if (!validateConfigApplyParams(params)) {
       respond(
         false,
@@ -356,7 +386,31 @@ export const configHandlers: GatewayRequestHandlers = {
       );
       return;
     }
-    await writeConfigFile(validated.config);
+    let incoming = validated.config;
+    const isControlUi = client?.connect?.client?.id === GATEWAY_CLIENT_IDS.CONTROL_UI;
+    if (isControlUi) {
+      incoming = stripProtectedPaths(incoming) as typeof validated.config;
+    }
+    // Merge with existing config to avoid losing fields when client sends partial config.
+    const toWrite =
+      snapshot.exists && snapshot.valid && snapshot.config
+        ? (applyMergePatch(
+            snapshot.config,
+            incoming,
+          ) as import("../../config/types.js").MoltbotConfig)
+        : incoming;
+    const revalidated = validateConfigObjectWithPlugins(toWrite);
+    if (!revalidated.ok) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, "invalid config after merge", {
+          details: { issues: revalidated.issues },
+        }),
+      );
+      return;
+    }
+    await writeConfigFile(revalidated.config);
 
     const sessionKey =
       typeof (params as { sessionKey?: unknown }).sessionKey === "string"
@@ -399,7 +453,7 @@ export const configHandlers: GatewayRequestHandlers = {
       {
         ok: true,
         path: CONFIG_PATH,
-        config: validated.config,
+        config: revalidated.config,
         restart,
         sentinel: {
           path: sentinelPath,
