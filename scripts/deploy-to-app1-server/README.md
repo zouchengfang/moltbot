@@ -83,6 +83,8 @@ ssh root@10.0.55.131 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-serve
 USE_CHINA_MIRROR=0 ./scripts/deploy-to-app1-server/redeploy-on-server.sh
 ```
 
+**国内镜像拉取失败时自动回退**：当 `docker.1ms.run` 拉取超时（如 Jenkins 内网 TLS handshake timeout）时，`redeploy-on-server.sh` 会自动用 Docker Hub 的 `node:22-bookworm` 重试一次（会走已设置的 `http_proxy`）。无需改 Jenkins 即可通过。
+
 **手动构建时使用国内镜像：**
 
 ```bash

@@ -339,7 +339,9 @@ export async function prepareSlackMessage(params: {
   const rawBody = (message.text ?? "").trim() || media?.placeholder || "";
   if (!rawBody) return null;
 
-  const ackReaction = resolveAckReaction(cfg, route.agentId);
+  const ackReaction = resolveAckReaction(cfg, route.agentId, {
+    sessionKey: route.sessionKey,
+  });
   const ackReactionValue = ackReaction ?? "";
 
   const shouldAckReaction = () =>

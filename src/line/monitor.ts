@@ -191,7 +191,9 @@ export async function monitorLineProvider(
           ctx: ctxPayload,
           cfg: config,
           dispatcherOptions: {
-            responsePrefix: resolveEffectiveMessagesConfig(config, route.agentId).responsePrefix,
+            responsePrefix: resolveEffectiveMessagesConfig(config, route.agentId, {
+              sessionKey: route.sessionKey,
+            }).responsePrefix,
             deliver: async (payload, _info) => {
               const lineData = (payload.channelData?.line as LineChannelData | undefined) ?? {};
 

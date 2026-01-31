@@ -99,6 +99,10 @@ You can run **multiple Telegram bots** at once. Each bot has its own token and a
 
 3. Start the gateway. All accounts with a valid token start (long-polling or webhook per account). Each bot’s DMs and groups are isolated by `accountId` in session keys (use `session.dmScope: "per-account-channel-peer"` so each bot has separate sessions per chat).
 4. Optional: use `moltbot channels add telegram` to add another account via CLI; the wizard writes into `channels.telegram.accounts.<accountId>`.
+5. **Per-bot identity:** To give each bot a distinct name/avatar/emoji in replies and UI, set `agents.list[].identityByChannelAccount` with keys `"telegram:<accountId>"` (e.g. `"telegram:default"`, `"telegram:alerts"`). Values merge over the agent's `identity` so you can override only `name`, `emoji`, or `avatar` per bot. See [gateway/configuration](/gateway/configuration#agentslistidentity) for `identity` fields.
+6. **Per-bot identity file:** Each bot can also have its own identity file in the agent workspace: `identity/IDENTITY.telegram.<accountId>.md` (e.g. `identity/IDENTITY.telegram.bot1.md`). Same format as root `IDENTITY.md` (Name, Emoji, Avatar, etc.). File values merge over config so each bot has its own identity "memory" file.
+
+**Avoiding confusion:** Identity is resolved in this order (later overrides earlier): (1) agent `identity`, (2) `identityByChannelAccount["telegram:<accountId>"]`, (3) per-bot file `identity/IDENTITY.telegram.<accountId>.md`. If a bot has no per-bot file, the root `IDENTITY.md` is used as fallback, so multiple bots can show the same name until you add per-bot config or a per-bot file. Use distinct names in config or per-bot files to keep each bot clearly separated. The `<accountId>` in keys and file names must match the account key in `channels.telegram.accounts` (e.g. if the account is `bot1`, use `"telegram:bot1"` and `IDENTITY.telegram.bot1.md`).
 
 See [gateway/configuration](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) for the shared multi-account pattern.
 

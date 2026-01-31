@@ -38,7 +38,20 @@ if [[ -n "${HTTP_PROXY:-}" ]] || [[ -n "${http_proxy:-}" ]]; then
 fi
 # BuildKit required for pnpm store cache (avoids re-downloading deps when only source changes)
 export DOCKER_BUILDKIT=1
-docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS[@]}"
+if ! docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS[@]}"; then
+  BUILD_EXIT=$?
+  if [[ "$USE_CHINA_MIRROR" =~ ^(1|yes|true)$ ]]; then
+    echo "==> China mirror failed (e.g. TLS timeout), retrying with Docker Hub (via proxy if set)"
+    BUILD_ARGS_FALLBACK=(--build-arg "CLAWDBOT_DOCKER_APT_PACKAGES=${CLAWDBOT_DOCKER_APT_PACKAGES:-}")
+    BUILD_ARGS_FALLBACK+=(--build-arg "NODE_IMAGE=node:22-bookworm")
+    for a in "${BUILD_ARGS[@]}"; do
+      [[ "$a" != --build-arg\ NODE_IMAGE=* ]] && BUILD_ARGS_FALLBACK+=("$a")
+    done
+    docker build -t moltbot:local -f Dockerfile . "${BUILD_ARGS_FALLBACK[@]}" || exit $?
+  else
+    exit "$BUILD_EXIT"
+  fi
+fi
 
 echo "==> Recreating and starting gateway"
 docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway

@@ -65,6 +65,7 @@ export async function routeReply(params: RouteReplyParams): Promise<RouteReplyRe
           sessionKey: params.sessionKey,
           config: cfg,
         }),
+        { sessionKey: params.sessionKey },
       ).responsePrefix
     : cfg.messages?.responsePrefix === "auto"
       ? undefined

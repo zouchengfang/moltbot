@@ -1,7 +1,13 @@
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
+import type { IdentityContext } from "../agents/identity.js";
 import { resolveAgentIdentity } from "../agents/identity.js";
+import {
+  identityHasValues,
+  loadAgentIdentityFromWorkspaceForChannelAccount,
+} from "../agents/identity-file.js";
 import { loadAgentIdentity } from "../commands/agents.config.js";
 import type { MoltbotConfig } from "../config/config.js";
+import { parseChannelAccountFromSessionKey } from "../routing/session-key.js";
 import { normalizeAgentId } from "../routing/session-key.js";
 
 const MAX_ASSISTANT_NAME = 50;
@@ -50,12 +56,41 @@ export function resolveAssistantIdentity(params: {
   cfg: MoltbotConfig;
   agentId?: string | null;
   workspaceDir?: string | null;
+  /** When provided, identity is resolved per channel/account (e.g. per Telegram bot). */
+  identityContext?: IdentityContext | null;
 }): AssistantIdentity {
   const agentId = normalizeAgentId(params.agentId ?? resolveDefaultAgentId(params.cfg));
   const workspaceDir = params.workspaceDir ?? resolveAgentWorkspaceDir(params.cfg, agentId);
   const configAssistant = params.cfg.ui?.assistant;
-  const agentIdentity = resolveAgentIdentity(params.cfg, agentId);
-  const fileIdentity = workspaceDir ? loadAgentIdentity(workspaceDir) : null;
+  const agentIdentity = resolveAgentIdentity(
+    params.cfg,
+    agentId,
+    params.identityContext ?? undefined,
+  );
+  const defaultFileIdentity = workspaceDir ? loadAgentIdentity(workspaceDir) : null;
+  let channelAccountFileIdentity: ReturnType<typeof loadAgentIdentity> = null;
+  if (workspaceDir && params.identityContext) {
+    const ctx = params.identityContext;
+    let channel: string | undefined;
+    let accountId: string | undefined;
+    if (ctx.channel != null && ctx.accountId != null) {
+      channel = ctx.channel.trim().toLowerCase() || undefined;
+      accountId = ctx.accountId.trim().toLowerCase() || undefined;
+    } else if (ctx.sessionKey) {
+      const parsed = parseChannelAccountFromSessionKey(ctx.sessionKey);
+      channel = parsed.channel;
+      accountId = parsed.accountId;
+    }
+    if (channel && accountId) {
+      const fromFile = loadAgentIdentityFromWorkspaceForChannelAccount(
+        workspaceDir,
+        channel,
+        accountId,
+      );
+      channelAccountFileIdentity = fromFile && identityHasValues(fromFile) ? fromFile : null;
+    }
+  }
+  const fileIdentity = channelAccountFileIdentity ?? defaultFileIdentity;
 
   const name =
     coerceIdentityValue(configAssistant?.name, MAX_ASSISTANT_NAME) ??

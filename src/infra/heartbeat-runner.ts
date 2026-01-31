@@ -490,7 +490,9 @@ export async function runHeartbeatOnce(opts: {
         })
       : { showOk: false, showAlerts: true, useIndicator: true };
   const { sender } = resolveHeartbeatSenderContext({ cfg, entry, delivery });
-  const responsePrefix = resolveEffectiveMessagesConfig(cfg, agentId).responsePrefix;
+  const responsePrefix = resolveEffectiveMessagesConfig(cfg, agentId, {
+    sessionKey,
+  }).responsePrefix;
 
   // Check if this is an exec event with pending exec completion system events.
   // If so, use a specialized prompt that instructs the model to relay the result

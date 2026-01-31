@@ -2,9 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { MoltbotConfig } from "../config/config.js";
+import { parseChannelAccountFromSessionKey } from "../routing/session-key.js";
 import { resolveUserPath } from "../utils.js";
 import { resolveAgentWorkspaceDir } from "./agent-scope.js";
-import { loadAgentIdentityFromWorkspace } from "./identity-file.js";
+import {
+  loadAgentIdentityFromWorkspace,
+  loadAgentIdentityFromWorkspaceForChannelAccount,
+} from "./identity-file.js";
+import type { IdentityContext } from "./identity.js";
 import { resolveAgentIdentity } from "./identity.js";
 
 export type AgentAvatarResolution =
@@ -20,10 +25,32 @@ function normalizeAvatarValue(value: string | undefined | null): string | null {
   return trimmed ? trimmed : null;
 }
 
-function resolveAvatarSource(cfg: MoltbotConfig, agentId: string): string | null {
-  const fromConfig = normalizeAvatarValue(resolveAgentIdentity(cfg, agentId)?.avatar);
+function resolveAvatarSource(
+  cfg: MoltbotConfig,
+  agentId: string,
+  ctx?: IdentityContext | null,
+): string | null {
+  const fromConfig = normalizeAvatarValue(resolveAgentIdentity(cfg, agentId, ctx)?.avatar);
   if (fromConfig) return fromConfig;
   const workspace = resolveAgentWorkspaceDir(cfg, agentId);
+  if (ctx) {
+    let channel: string | undefined;
+    let accountId: string | undefined;
+    if (ctx.channel != null && ctx.accountId != null) {
+      channel = ctx.channel.trim().toLowerCase() || undefined;
+      accountId = ctx.accountId.trim().toLowerCase() || undefined;
+    } else if (ctx.sessionKey) {
+      const parsed = parseChannelAccountFromSessionKey(ctx.sessionKey);
+      channel = parsed.channel;
+      accountId = parsed.accountId;
+    }
+    if (channel && accountId) {
+      const fromChannelFile = normalizeAvatarValue(
+        loadAgentIdentityFromWorkspaceForChannelAccount(workspace, channel, accountId)?.avatar,
+      );
+      if (fromChannelFile) return fromChannelFile;
+    }
+  }
   const fromIdentity = normalizeAvatarValue(loadAgentIdentityFromWorkspace(workspace)?.avatar);
   return fromIdentity;
 }
@@ -79,8 +106,12 @@ function resolveLocalAvatarPath(params: {
   return { ok: true, filePath: realPath };
 }
 
-export function resolveAgentAvatar(cfg: MoltbotConfig, agentId: string): AgentAvatarResolution {
-  const source = resolveAvatarSource(cfg, agentId);
+export function resolveAgentAvatar(
+  cfg: MoltbotConfig,
+  agentId: string,
+  ctx?: IdentityContext | null,
+): AgentAvatarResolution {
+  const source = resolveAvatarSource(cfg, agentId, ctx);
   if (!source) {
     return { kind: "none", reason: "missing" };
   }

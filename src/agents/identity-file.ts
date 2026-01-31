@@ -86,3 +86,42 @@ export function loadAgentIdentityFromWorkspace(workspace: string): AgentIdentity
   const identityPath = path.join(workspace, DEFAULT_IDENTITY_FILENAME);
   return loadIdentityFromFile(identityPath);
 }
+
+/** Subdir under workspace for per-channel-account identity files. */
+export const IDENTITY_CHANNEL_SUBDIR = "identity";
+
+/**
+ * Path to the identity file for a channel+account (e.g. identity/IDENTITY.telegram.bot1.md).
+ * Used so each bot/account can have its own name/avatar/emoji file memory.
+ */
+export function getIdentityFilePathForChannelAccount(
+  workspaceDir: string,
+  channel: string,
+  accountId: string,
+): string {
+  const safeChannel =
+    (channel ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-") || "default";
+  const safeAccount =
+    (accountId ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-") || "default";
+  const basename = `${path.basename(DEFAULT_IDENTITY_FILENAME, path.extname(DEFAULT_IDENTITY_FILENAME))}.${safeChannel}.${safeAccount}.md`;
+  return path.join(workspaceDir, IDENTITY_CHANNEL_SUBDIR, basename);
+}
+
+/**
+ * Load identity from the per-channel-account file (identity/IDENTITY.<channel>.<accountId>.md).
+ * Returns null if the file is missing or has no values.
+ */
+export function loadAgentIdentityFromWorkspaceForChannelAccount(
+  workspaceDir: string,
+  channel: string,
+  accountId: string,
+): AgentIdentityFile | null {
+  const identityPath = getIdentityFilePathForChannelAccount(workspaceDir, channel, accountId);
+  return loadIdentityFromFile(identityPath);
+}

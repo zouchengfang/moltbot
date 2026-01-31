@@ -423,7 +423,9 @@ export function registerSlackMonitorSlashCommands(params: {
         ctx: ctxPayload,
         cfg,
         dispatcherOptions: {
-          responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId).responsePrefix,
+          responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId, {
+            sessionKey: route.sessionKey,
+          }).responsePrefix,
           deliver: async (payload) => {
             await deliverSlackSlashReplies({
               replies: [payload],

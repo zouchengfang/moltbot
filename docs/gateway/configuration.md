@@ -426,6 +426,10 @@ If set, Moltbot derives defaults (only when you haven’t set them explicitly):
 }
 ```
 
+### `agents.list[].identityByChannelAccount`
+
+Optional per-channel-account identity overrides. Use when one agent serves multiple bots or accounts (e.g. multiple Telegram bots). Key format: `"<channel>:<accountId>"` (e.g. `"telegram:bot1"`, `"discord:default"`). Values merge over the agent’s `identity`; only set the fields you want to override (name, emoji, avatar). Each channel account can also have its own identity file under the agent workspace: `identity/IDENTITY.<channel>.<accountId>.md` (e.g. `identity/IDENTITY.telegram.bot1.md`). File values override config. **Avoiding confusion:** Resolution order is: agent `identity` → `identityByChannelAccount["channel:accountId"]` → per-account file `identity/IDENTITY.<channel>.<accountId>.md` → root `IDENTITY.md`. Use distinct names per account so each bot is clearly separated; `<accountId>` must match the account key in `channels.<channel>.accounts`.
+
 ### `wizard`
 
 Metadata written by CLI wizards (`onboard`, `configure`, `doctor`).

@@ -450,7 +450,11 @@ export const agentHandlers: GatewayRequestHandlers = {
       agentId = resolved;
     }
     const cfg = loadConfig();
-    const identity = resolveAssistantIdentity({ cfg, agentId });
+    const identity = resolveAssistantIdentity({
+      cfg,
+      agentId,
+      identityContext: sessionKeyRaw ? { sessionKey: sessionKeyRaw } : undefined,
+    });
     const avatarValue =
       resolveAssistantAvatarUrl({
         avatar: identity.avatar,

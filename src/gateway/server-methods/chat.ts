@@ -465,12 +465,14 @@ export const chatHandlers: GatewayRequestHandlers = {
         sessionKey: p.sessionKey,
         config: cfg,
       });
+      const identityContext = p.sessionKey ? { sessionKey: p.sessionKey } : undefined;
       let prefixContext: ResponsePrefixContext = {
-        identityName: resolveIdentityName(cfg, agentId),
+        identityName: resolveIdentityName(cfg, agentId, identityContext),
       };
       const finalReplyParts: string[] = [];
       const dispatcher = createReplyDispatcher({
-        responsePrefix: resolveEffectiveMessagesConfig(cfg, agentId).responsePrefix,
+        responsePrefix: resolveEffectiveMessagesConfig(cfg, agentId, identityContext)
+          .responsePrefix,
         responsePrefixContextProvider: () => prefixContext,
         onError: (err) => {
           context.logGateway.warn(`webchat dispatch failed: ${formatForLog(err)}`);

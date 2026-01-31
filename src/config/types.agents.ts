@@ -30,6 +30,11 @@ export type AgentConfig = {
   /** Optional per-agent heartbeat overrides. */
   heartbeat?: AgentDefaultsConfig["heartbeat"];
   identity?: IdentityConfig;
+  /**
+   * Per-channel-account identity override. Key: "channel:accountId" (e.g. "telegram:bot1", "discord:default").
+   * Merged over agent identity so each bot/account can have a distinct name/avatar/emoji.
+   */
+  identityByChannelAccount?: Record<string, IdentityConfig>;
   groupChat?: GroupChatConfig;
   subagents?: {
     /** Allow spawning sub-agents under other agent ids. Use "*" to allow any. */
