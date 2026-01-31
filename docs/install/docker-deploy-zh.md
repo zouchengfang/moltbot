@@ -221,6 +221,19 @@ ports:
    ```
    会同步代码到 `10.0.55.131:/zouchengfang/moltbot`，在服务器上构建镜像并以 `docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d` 启动网关。
 
+**131 运维速查**（宿主机 `/zouchengfang/moltbot` 为项目根目录，moltbot 以 Docker 方式运行）：
+
+| 操作 | 命令 |
+|------|------|
+| SSH 登录 | `ssh 131` 或 `ssh root@10.0.55.131` |
+| 查看状态 | `ssh 131 'moltbot status'` |
+| 查看 cron | `ssh 131 'moltbot cron list'` |
+| 清空系统事件 | `ssh 131 'moltbot system events'` |
+| 进入项目目录 | `ssh 131 'cd /zouchengfang/moltbot && ...'` |
+| 重启网关 | `ssh 131 'cd /zouchengfang/moltbot && docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d'` |
+
+宿主机已配置 `/usr/local/bin/moltbot` 包装脚本，可在容器内执行 moltbot CLI。
+
 详见 `scripts/deploy-to-app1-server/README.md`。
 
 ## 相关文档
