@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyMergePatch,
-  CONTROL_UI_READONLY_PREFIXES,
-  stripProtectedPaths,
-} from "./merge-patch.js";
+import { applyMergePatch, stripProtectedPaths } from "./merge-patch.js";
 
 describe("applyMergePatch", () => {
   it("merges patch into base", () => {

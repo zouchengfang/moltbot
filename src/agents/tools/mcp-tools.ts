@@ -105,7 +105,7 @@ async function connectAndListTools(params: {
     StreamableHTTPClientTransport = streamableMod.StreamableHTTPClientTransport;
     ListToolsResultSchema = typesMod.ListToolsResultSchema;
   } catch (err) {
-    log.warn(`MCP SDK not available: ${err}`);
+    log.warn(`MCP SDK not available: ${String(err)}`);
     return null;
   }
 
@@ -136,14 +136,14 @@ async function connectAndListTools(params: {
       return null;
     }
   } catch (err) {
-    log.warn(`MCP server ${serverKey} transport failed: ${err}`);
+    log.warn(`MCP server ${serverKey} transport failed: ${String(err)}`);
     return null;
   }
 
   try {
     await client.connect(transport as McpTransport);
   } catch (err) {
-    log.warn(`MCP server ${serverKey} connect failed: ${err}`);
+    log.warn(`MCP server ${serverKey} connect failed: ${String(err)}`);
     return null;
   }
 
@@ -159,7 +159,7 @@ async function connectAndListTools(params: {
     }
     return { serverKey, tools };
   } catch (err) {
-    log.warn(`MCP server ${serverKey} tools/list failed: ${err}`);
+    log.warn(`MCP server ${serverKey} tools/list failed: ${String(err)}`);
     if (typeof transport.close === "function") {
       await transport.close().catch(() => {});
     }
@@ -173,7 +173,7 @@ async function callMcpTool(params: {
   toolName: string;
   args: Record<string, unknown>;
 }): Promise<{ content: McpContentItem[]; isError?: boolean }> {
-  const { serverKey, serverConfig, toolName, args } = params;
+  const { serverConfig, toolName, args } = params;
   let Client: McpClient;
   let StdioClientTransport: new (opts: {
     command: string;
@@ -229,7 +229,7 @@ async function callMcpTool(params: {
     }
   } catch (err) {
     return {
-      content: [{ type: "text", text: `Transport failed: ${err}` }],
+      content: [{ type: "text", text: `Transport failed: ${String(err)}` }],
       isError: true,
     };
   }
@@ -238,7 +238,7 @@ async function callMcpTool(params: {
     await client.connect(transport as McpTransport);
   } catch (err) {
     return {
-      content: [{ type: "text", text: `Connect failed: ${err}` }],
+      content: [{ type: "text", text: `Connect failed: ${String(err)}` }],
       isError: true,
     };
   }
@@ -262,7 +262,7 @@ async function callMcpTool(params: {
       await transport.close().catch(() => {});
     }
     return {
-      content: [{ type: "text", text: `Tool call failed: ${err}` }],
+      content: [{ type: "text", text: `Tool call failed: ${String(err)}` }],
       isError: true,
     };
   }
@@ -290,7 +290,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
       }, ms),
     ),
   ]).catch((err) => {
-    log.warn(`MCP discovery: ${label} failed: ${err}`);
+    log.warn(`MCP discovery: ${label} failed: ${String(err)}`);
     return null;
   });
 }

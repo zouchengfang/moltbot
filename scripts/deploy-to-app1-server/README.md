@@ -118,6 +118,27 @@ docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --f
 1. 在服务器上若未设置 `CLAWDBOT_GATEWAY_TOKEN`，脚本会生成并写入 `.env`
 2. 浏览器访问 `http://10.0.55.131:18789/`，在控制台设置中粘贴 Token
 
+## 发布到 150（代码同步 + 构建 + 启动）
+
+150 使用与 131 相同的应用根目录与 compose 配置，仅 SSH 目标不同。在**本机**执行时指定 `REMOTE=root@10.0.55.150`：
+
+```bash
+# 完整：同步代码 → 在 150 上构建镜像 → 强制重建并启动网关
+REMOTE=root@10.0.55.150 ./scripts/deploy-to-app1-server/full-redeploy.sh
+```
+
+或分步：先同步代码，再 SSH 到 150 构建并启动：
+
+```bash
+REMOTE=root@10.0.55.150 ./scripts/deploy-to-app1-server/deploy.sh sync
+ssh root@10.0.55.150 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-server/redeploy-on-server.sh'
+```
+
+发布后配置（可选）：
+
+- **MCP**：拷贝本机 `~/.cursor/mcp.json` 到 150 后执行 `apply-mcp-config.sh`，或本机执行 `sync-mcp-to-150.sh`（见下）。
+- **定时任务**：从 10.5.0.8 或 131 同步 cron（见下）。
+
 ## 150 定时任务（参考 10.5.0.8）
 
 若 10.5.0.8（或 131）上已配置了 Gateway 定时任务（Cron），可在**能 SSH 到参考主机与 150 的本机**执行同步脚本，将 cron `jobs.json` 拷到 150 并重启 gateway。
@@ -137,3 +158,33 @@ SOURCE_HOST=root@10.0.55.131 ./scripts/deploy-to-app1-server/sync-cron-to-150.sh
 ```
 
 环境变量：`SOURCE_HOST`、`SOURCE_CRON_PATH`（覆盖源路径）、`TARGET_HOST`（默认 `root@10.0.55.150`）、`APP_ROOT`（默认 `/zouchengfang/moltbot`）、`RESTART=0` 可跳过同步后重启 gateway。
+
+## 150 MCP 配置（本机 → 150）
+
+将本机当前 MCP 配置同步到 150 的 `skills.mcp.servers`，使 150 上运行的 agent 使用相同的 MCP 服务器。
+
+**前提**：本机已配置 SSH 到 150（如 `ssh root@10.0.55.150`），且本机有 `jq`。
+
+```bash
+# 使用本机 ~/.cursor/mcp.json 同步到 150（并重启 gateway）
+./scripts/deploy-to-app1-server/sync-mcp-to-150.sh
+```
+
+若同时使用项目级 MCP 配置（与 Cursor 一致：先全局再项目，同名校准覆盖）：
+
+```bash
+MCP_PROJECT_JSON=./.cursor/mcp.json ./scripts/deploy-to-app1-server/sync-mcp-to-150.sh
+```
+
+环境变量：`MCP_GLOBAL_JSON`（默认 `~/.cursor/mcp.json`）、`MCP_PROJECT_JSON`（可选）、`TARGET_HOST`（默认 `root@10.0.55.150`）、`APP_ROOT`（默认 `/zouchengfang/moltbot`）、`RESTART=0` 可跳过同步后重启 gateway。脚本会合并本机 MCP 到 150 的 `APP_ROOT/.clawdbot/moltbot.json` 的 `skills.mcp.servers`，并可选重启 moltbot-gateway。
+
+### 在 150 上直接执行
+
+登录 150 后，若 mcp.json 已在 150 上（如拷到 `/zouchengfang/moltbot/.cursor/mcp.json`），可直接在本机合并并重启：
+
+```bash
+ssh root@10.0.55.150
+cd /zouchengfang/moltbot && ./scripts/apply-mcp-config.sh
+```
+
+默认会从 `APP_ROOT/.cursor/mcp.json` 读取、合并进 `APP_ROOT/.clawdbot/moltbot.json` 的 `skills.mcp.servers`，并重启 gateway。可覆盖：`MCP_JSON=/path/to/mcp.json`、`CONFIG_PATH=...`、`RESTART=0`。
