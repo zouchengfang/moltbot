@@ -308,9 +308,21 @@ export async function dispatchReplyFromConfig(params: {
 
     const replies = replyResult ? (Array.isArray(replyResult) ? replyResult : [replyResult]) : [];
 
+    // Telegram: send final replies in chronological order (oldest first) by default.
+    // Set channels.telegram.finalRepliesChronological to false to use resolver order.
+    const telegramCfg = cfg.channels?.telegram;
+    const wantChronological =
+      channel === "telegram" &&
+      replies.length > 1 &&
+      (typeof telegramCfg !== "object" ||
+        telegramCfg === null ||
+        (telegramCfg as { finalRepliesChronological?: boolean }).finalRepliesChronological !==
+          false);
+    const repliesToSend = wantChronological ? [...replies].reverse() : replies;
+
     let queuedFinal = false;
     let routedFinalCount = 0;
-    for (const reply of replies) {
+    for (const reply of repliesToSend) {
       const ttsReply = await maybeApplyTtsToPayload({
         payload: reply,
         cfg,

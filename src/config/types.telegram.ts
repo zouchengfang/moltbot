@@ -130,6 +130,11 @@ export type TelegramAccountConfig = {
   heartbeat?: ChannelHeartbeatVisibilityConfig;
   /** Controls whether link previews are shown in outbound messages. Default: true. */
   linkPreview?: boolean;
+  /**
+   * When true (default), final reply payloads are sent in chronological order (oldest first).
+   * Set to false to send in resolver order.
+   */
+  finalRepliesChronological?: boolean;
 };
 
 export type TelegramTopicConfig = {
