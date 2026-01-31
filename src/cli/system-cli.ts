@@ -108,6 +108,27 @@ export function registerSystemCli(program: Command) {
 
   addGatewayClientOptions(
     system
+      .command("events")
+      .description("Clear queued system events for main session (recover from junk)")
+      .option("--json", "Output JSON", false),
+  ).action(async (opts: GatewayRpcOpts & { json?: boolean }) => {
+    try {
+      const result = await callGatewayFromCli("system-events.clear", opts, undefined, {
+        expectFinal: false,
+      });
+      if (opts.json) defaultRuntime.log(JSON.stringify(result, null, 2));
+      else
+        defaultRuntime.log(
+          `Cleared ${(result as { cleared?: number })?.cleared ?? 0} system events`,
+        );
+    } catch (err) {
+      defaultRuntime.error(danger(String(err)));
+      defaultRuntime.exit(1);
+    }
+  });
+
+  addGatewayClientOptions(
+    system
       .command("presence")
       .description("List system presence entries")
       .option("--json", "Output JSON", false),

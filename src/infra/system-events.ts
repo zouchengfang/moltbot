@@ -92,6 +92,19 @@ export function hasSystemEvents(sessionKey: string) {
   return (queues.get(key)?.queue.length ?? 0) > 0;
 }
 
+/** Clear all queued system events for a session (e.g. to recover from junk). */
+export function clearSystemEvents(sessionKey: string): number {
+  const key = requireSessionKey(sessionKey);
+  const entry = queues.get(key);
+  if (!entry || entry.queue.length === 0) return 0;
+  const count = entry.queue.length;
+  entry.queue.length = 0;
+  entry.lastText = null;
+  entry.lastContextKey = null;
+  queues.delete(key);
+  return count;
+}
+
 export function resetSystemEventsForTest() {
   queues.clear();
 }

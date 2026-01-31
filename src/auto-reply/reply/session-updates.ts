@@ -26,6 +26,8 @@ export async function prependSystemEvents(params: {
     if (lower.startsWith("read heartbeat.md")) return null;
     // Also filter heartbeat poll/wake noise
     if (lower.includes("heartbeat poll") || lower.includes("heartbeat wake")) return null;
+    // Filter shell commands mistakenly used as systemEvent text (e.g. from misconfigured cron)
+    if (lower.startsWith("/exec ") || /^moltbot\s+status\s+\|/.test(lower)) return null;
     if (trimmed.startsWith("Node:")) {
       return trimmed.replace(/ · last input [^·]+/i, "").trim();
     }

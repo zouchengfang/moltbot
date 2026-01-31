@@ -376,4 +376,28 @@ describe("prependSystemEvents", () => {
     process.env.TZ = originalTz;
     vi.useRealTimers();
   });
+
+  it("filters shell commands mistakenly used as systemEvent text", async () => {
+    enqueueSystemEvent("/exec moltbot status | grep -A 3 'default_model'", {
+      sessionKey: "agent:main:main",
+    });
+    enqueueSystemEvent("moltbot status | grep default_model", {
+      sessionKey: "agent:main:main",
+    });
+    enqueueSystemEvent("Model switched.", { sessionKey: "agent:main:main" });
+
+    const result = await prependSystemEvents({
+      cfg: {} as MoltbotConfig,
+      sessionKey: "agent:main:main",
+      isMainSession: false,
+      isNewSession: false,
+      prefixedBodyBase: "User: hi",
+    });
+
+    expect(result).toMatch(/System:.*Model switched\./);
+    expect(result).not.toMatch(/\/exec moltbot status/);
+    expect(result).not.toMatch(/moltbot status \| grep/);
+
+    resetSystemEventsForTest();
+  });
 });
