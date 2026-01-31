@@ -514,7 +514,7 @@ export const MoltbotSchema = z
           )
           .optional(),
       })
-      .strict()
+      .passthrough()
       .optional(),
     plugins: z
       .object({

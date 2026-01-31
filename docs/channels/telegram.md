@@ -64,11 +64,43 @@ Example:
 Env option: `TELEGRAM_BOT_TOKEN=...` (works for the default account).
 If both env and config are set, config takes precedence.
 
-Multi-account support: use `channels.telegram.accounts` with per-account tokens and optional `name`. See [`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) for the shared pattern.
+Multi-account: use `channels.telegram.accounts` for multiple bots (see [Multiple bots](#multiple-bots-concurrent-conversations) below).
 
 3) Start the gateway. Telegram starts when a token is resolved (config first, env fallback).
 4) DM access defaults to pairing. Approve the code when the bot is first contacted.
 5) For groups: add the bot, decide privacy/admin behavior (below), then set `channels.telegram.groups` to control mention gating + allowlists.
+
+## Multiple bots (concurrent conversations)
+
+You can run **multiple Telegram bots** at once. Each bot has its own token and accepts conversations independently; the gateway starts all configured accounts and routes replies back to the correct bot/chat.
+
+1. Create each bot with **@BotFather** and copy each token.
+2. Configure `channels.telegram.accounts` with one entry per bot (key = `accountId`, used in session keys and routing):
+
+```json5
+{
+  channels: {
+    telegram: {
+      enabled: true,
+      accounts: {
+        default: {
+          name: "Primary bot",
+          botToken: "123456:ABC..."
+        },
+        alerts: {
+          name: "Alerts bot",
+          botToken: "987654:XYZ..."
+        }
+      }
+    }
+  }
+}
+```
+
+3. Start the gateway. All accounts with a valid token start (long-polling or webhook per account). Each bot’s DMs and groups are isolated by `accountId` in session keys (use `session.dmScope: "per-account-channel-peer"` so each bot has separate sessions per chat).
+4. Optional: use `moltbot channels add telegram` to add another account via CLI; the wizard writes into `channels.telegram.accounts.<accountId>`.
+
+See [gateway/configuration](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) for the shared multi-account pattern.
 
 ## Token + privacy + permissions (Telegram side)
 

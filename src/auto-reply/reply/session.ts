@@ -215,6 +215,11 @@ export async function initSessionState(params: {
     ? evaluateSessionFreshness({ updatedAt: entry.updatedAt, now, policy: resetPolicy }).fresh
     : false;
 
+  // Reuse existing session when only reason for "new" is idle/daily timeout (not user /new).
+  // Same Telegram chat continues in the same transcript so content stays continuous.
+  const continueAfterTimeout =
+    !resetTriggered && entry?.sessionId && entry?.sessionFile && !freshEntry;
+
   if (!isNewSession && freshEntry) {
     sessionId = entry.sessionId;
     systemSent = entry.systemSent ?? false;
@@ -225,6 +230,17 @@ export async function initSessionState(params: {
     persistedTtsAuto = entry.ttsAuto;
     persistedModelOverride = entry.modelOverride;
     persistedProviderOverride = entry.providerOverride;
+  } else if (continueAfterTimeout) {
+    sessionId = entry.sessionId;
+    systemSent = entry.systemSent ?? false;
+    abortedLastRun = entry.abortedLastRun ?? false;
+    persistedThinking = entry.thinkingLevel;
+    persistedVerbose = entry.verboseLevel;
+    persistedReasoning = entry.reasoningLevel;
+    persistedTtsAuto = entry.ttsAuto;
+    persistedModelOverride = entry.modelOverride;
+    persistedProviderOverride = entry.providerOverride;
+    isNewSession = false;
   } else {
     sessionId = crypto.randomUUID();
     isNewSession = true;
@@ -322,6 +338,10 @@ export async function initSessionState(params: {
       agentId,
       ctx.MessageThreadId,
     );
+  }
+  // Preserve existing transcript path when continuing after timeout (same chat).
+  if (!isNewSession && entry?.sessionFile && entry.sessionId === sessionEntry.sessionId) {
+    sessionEntry.sessionFile = entry.sessionFile;
   }
   if (isNewSession) {
     sessionEntry.compactionCount = 0;

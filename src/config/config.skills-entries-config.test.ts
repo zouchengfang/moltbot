@@ -21,6 +21,23 @@ describe("skills entries config schema", () => {
     expect(res.success).toBe(true);
   });
 
+  it("accepts skills.mcp (enabled and servers)", () => {
+    const res = MoltbotSchema.safeParse({
+      skills: {
+        mcp: {
+          enabled: true,
+          servers: {
+            "my-server": { command: "npx", args: ["-y", "my-mcp"] },
+          },
+        },
+      },
+    });
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.data.skills?.mcp?.enabled).toBe(true);
+    expect(res.data.skills?.mcp?.servers?.["my-server"]?.command).toBe("npx");
+  });
+
   it("rejects unknown top-level fields", () => {
     const res = MoltbotSchema.safeParse({
       skills: {

@@ -56,14 +56,24 @@ the workspace is writable. See [Memory](/concepts/memory) and
   - Webhooks: `hook:<uuid>` (unless explicitly set by the hook)
   - Node runs: `node-<nodeId>`
 
+## Multi-bot and multi-session isolation
+- **Multiple Telegram (or other) bots**: use `session.dmScope: "per-account-channel-peer"` and configure multiple accounts (e.g. `channels.telegram.accounts`). Each account gets its own `accountId`; session keys include it (`agent:<agentId>:<channel>:<accountId>:dm:<peerId>`), so each bot’s conversations are isolated.
+- **Per-session context**: each session key has its own transcript file and metadata; conversation history and in-session state do not leak across sessions.
+- **Shared (agent-level) content**: the agent’s memory and workspace (e.g. `~/.clawdbot/agents/<agentId>/memory`) are shared across all sessions of that agent. Use agent-level memory or injected files for facts or context you want every session to see; use session transcripts for conversation-specific context only.
+
+## Timeout continuity (same chat, same transcript)
+- When a session is considered **stale** (idle timeout or daily reset), the **next message in the same chat** continues in the **same transcript file** (same `sessionId` and `sessionFile`). Content stays continuous; the model still sees prior turns.
+- Only an explicit **reset** (e.g. `/new` or `/reset`) starts a new session id and a new transcript file for that chat.
+- So: same Telegram (or other) conversation re-establishing after a long pause keeps one continuous thread; only a user-triggered reset starts a new thread.
+
 ## Lifecycle
 - Reset policy: sessions are reused until they expire, and expiry is evaluated on the next inbound message.
 - Daily reset: defaults to **4:00 AM local time on the gateway host**. A session is stale once its last update is earlier than the most recent daily reset time.
-- Idle reset (optional): `idleMinutes` adds a sliding idle window. When both daily and idle resets are configured, **whichever expires first** forces a new session.
+- Idle reset (optional): `idleMinutes` adds a sliding idle window. When both daily and idle resets are configured, **whichever expires first** marks the session stale; the next message in the same chat still continues in the same transcript (see Timeout continuity above).
 - Legacy idle-only: if you set `session.idleMinutes` without any `session.reset`/`resetByType` config, Moltbot stays in idle-only mode for backward compatibility.
 - Per-type overrides (optional): `resetByType` lets you override the policy for `dm`, `group`, and `thread` sessions (thread = Slack/Discord threads, Telegram topics, Matrix threads when provided by the connector).
 - Per-channel overrides (optional): `resetByChannel` overrides the reset policy for a channel (applies to all session types for that channel and takes precedence over `reset`/`resetByType`).
-- Reset triggers: exact `/new` or `/reset` (plus any extras in `resetTriggers`) start a fresh session id and pass the remainder of the message through. `/new <model>` accepts a model alias, `provider/model`, or provider name (fuzzy match) to set the new session model. If `/new` or `/reset` is sent alone, Moltbot runs a short “hello” greeting turn to confirm the reset.
+- Reset triggers: exact `/new` or `/reset` (plus any extras in `resetTriggers`) start a **new** session id and transcript; the remainder of the message is passed through. `/new <model>` accepts a model alias, `provider/model`, or provider name (fuzzy match) to set the new session model. If `/new` or `/reset` is sent alone, Moltbot runs a short “hello” greeting turn to confirm the reset.
 - Manual reset: delete specific keys from the store or remove the JSONL transcript; the next message recreates them.
 - Isolated cron jobs always mint a fresh `sessionId` per run (no idle reuse).
 

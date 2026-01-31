@@ -139,6 +139,22 @@ ssh root@10.0.55.150 'cd /zouchengfang/moltbot && ./scripts/deploy-to-app1-serve
 - **MCP**：拷贝本机 `~/.cursor/mcp.json` 到 150 后执行 `apply-mcp-config.sh`，或本机执行 `sync-mcp-to-150.sh`（见下）。
 - **定时任务**：从 10.5.0.8 或 131 同步 cron（见下）。
 
+**若 150 仍报 “skills: Unrecognized key: mcp”**：说明容器内仍是旧镜像（未含 `skills.mcp` 的 schema）。需在 150 上**强制重建镜像**后再启动：
+
+```bash
+ssh root@10.0.55.150
+cd /zouchengfang/moltbot
+git pull --rebase origin main   # 或当前分支，确保含 skills.mcp 的代码
+docker compose -f docker-compose.yml -f docker-compose.app1-server.yml build --no-cache moltbot-gateway
+docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway
+```
+
+或本机一条命令：
+
+```bash
+ssh root@10.0.55.150 'cd /zouchengfang/moltbot && git pull --rebase origin main && docker compose -f docker-compose.yml -f docker-compose.app1-server.yml build --no-cache moltbot-gateway && docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --force-recreate moltbot-gateway'
+```
+
 ## 150 定时任务（参考 10.5.0.8）
 
 若 10.5.0.8（或 131）上已配置了 Gateway 定时任务（Cron），可在**能 SSH 到参考主机与 150 的本机**执行同步脚本，将 cron `jobs.json` 拷到 150 并重启 gateway。

@@ -295,6 +295,51 @@ describe("initSessionState reset policy", () => {
     }
   });
 
+  it("continues same conversation after idle timeout when entry has sessionFile (same chat)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 18, 5, 30, 0));
+    try {
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), "moltbot-continue-after-idle-"));
+      const storePath = path.join(root, "sessions.json");
+      const sessionsDir = path.join(root, "agents", "main", "sessions");
+      await fs.mkdir(sessionsDir, { recursive: true });
+      const sessionKey = "agent:main:telegram:default:dm:123";
+      const existingSessionId = "continue-session-id";
+      const existingSessionFile = path.join(sessionsDir, `${existingSessionId}.jsonl`);
+      await fs.writeFile(
+        existingSessionFile,
+        `${JSON.stringify({ type: "session", id: existingSessionId })}\n`,
+        "utf-8",
+      );
+
+      await saveSessionStore(storePath, {
+        [sessionKey]: {
+          sessionId: existingSessionId,
+          sessionFile: existingSessionFile,
+          updatedAt: new Date(2026, 0, 18, 4, 45, 0).getTime(),
+        },
+      });
+
+      const cfg = {
+        session: {
+          store: storePath,
+          reset: { mode: "daily", atHour: 4, idleMinutes: 30 },
+        },
+      } as MoltbotConfig;
+      const result = await initSessionState({
+        ctx: { Body: "hello again", SessionKey: sessionKey },
+        cfg,
+        commandAuthorized: true,
+      });
+
+      expect(result.isNewSession).toBe(false);
+      expect(result.sessionId).toBe(existingSessionId);
+      expect(result.sessionEntry.sessionFile).toBe(existingSessionFile);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("uses per-type overrides for thread sessions", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 0, 18, 5, 0, 0));
