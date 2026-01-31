@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { runEmbeddedPiAgent } from "../agents/pi-embedded.js";
+import { resolveDefaultModelForAgent } from "../agents/model-selection.js";
 import type { MoltbotConfig } from "../config/config.js";
 import {
   resolveDefaultAgentId,
@@ -38,6 +39,8 @@ ${params.sessionContent.slice(0, 2000)}
 
 Reply with ONLY the slug, nothing else. Examples: "vendor-pitch", "api-design", "bug-fix"`;
 
+    const modelRef = resolveDefaultModelForAgent({ cfg: params.cfg, agentId });
+
     const result = await runEmbeddedPiAgent({
       sessionId: `slug-generator-${Date.now()}`,
       sessionKey: "temp:slug-generator",
@@ -45,6 +48,8 @@ Reply with ONLY the slug, nothing else. Examples: "vendor-pitch", "api-design", 
       workspaceDir,
       agentDir,
       config: params.cfg,
+      provider: modelRef.provider,
+      model: modelRef.model,
       prompt,
       timeoutMs: 15_000, // 15 second timeout
       runId: `slug-gen-${Date.now()}`,
