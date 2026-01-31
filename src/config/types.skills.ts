@@ -5,9 +5,24 @@ export type SkillConfig = {
   config?: Record<string, unknown>;
 };
 
+/** Same shape as Cursor MCP server: stdio (command/args) or URL. */
+export type McpServerConfig = {
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  [key: string]: unknown;
+};
+
 export type SkillsMcpConfig = {
-  /** Include Cursor MCP servers (from .cursor/mcp.json and ~/.cursor/mcp.json) as skills. Default true. */
+  /** Include MCP servers (Cursor mcp.json + config servers) as skills. Default true. */
   enabled?: boolean;
+  /**
+   * MCP servers defined in config. Merged with Cursor .cursor/mcp.json and ~/.cursor/mcp.json;
+   * config entries override Cursor for the same server name.
+   * Example: { "my-server": { "command": "npx", "args": ["-y", "my-mcp-server"] } }
+   */
+  servers?: Record<string, McpServerConfig>;
 };
 
 export type SkillsLoadConfig = {

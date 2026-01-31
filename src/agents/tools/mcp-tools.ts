@@ -6,7 +6,7 @@
 import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import type { MoltbotConfig } from "../../config/config.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
-import { loadCursorMcpConfig, type CursorMcpServerConfig } from "../skills/mcp-cursor.js";
+import { getMergedMcpConfig, type CursorMcpServerConfig } from "../skills/mcp-cursor.js";
 import type { AnyAgentTool } from "./common.js";
 import { jsonResult } from "./common.js";
 
@@ -277,10 +277,28 @@ function mcpInputSchemaToParameters(schema: McpTool["inputSchema"]): Record<stri
   return { type, properties, ...(schema.required ? { required: schema.required } : {}) };
 }
 
+/** Per-server discovery timeout (ms). One slow server does not block the rest. */
+const MCP_DISCOVERY_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) =>
+      setTimeout(() => {
+        log.warn(`MCP discovery: ${label} timed out after ${ms}ms`);
+        resolve(null);
+      }, ms),
+    ),
+  ]).catch((err) => {
+    log.warn(`MCP discovery: ${label} failed: ${err}`);
+    return null;
+  });
+}
+
 /**
- * Resolve MCP tools from Cursor MCP config. Each server is contacted (stdio or HTTP),
- * tools are listed, and wrapper AnyAgentTools are returned. Tool names are prefixed
- * with mcp_<server>_ to avoid clashes. Disabled when skills.mcp.enabled is false.
+ * Resolve MCP tools from merged config (Cursor mcp.json + skills.mcp.servers).
+ * Servers are discovered in parallel with a per-server timeout. Tool names are
+ * prefixed with mcp_<server>_ to avoid clashes. Disabled when skills.mcp.enabled is false.
  */
 export async function resolveMcpTools(params: {
   workspaceDir?: string;
@@ -290,25 +308,38 @@ export async function resolveMcpTools(params: {
   const workspaceDir = params.workspaceDir?.trim();
   if (!workspaceDir) return [];
 
-  const servers = loadCursorMcpConfig(workspaceDir);
-  if (Object.keys(servers).length === 0) return [];
+  const servers = getMergedMcpConfig(workspaceDir, params.config);
+  const serverEntries = Object.entries(servers);
+  if (serverEntries.length === 0) return [];
+
+  const discovered = await Promise.all(
+    serverEntries.map(([serverKey, serverConfig]) =>
+      withTimeout(
+        connectAndListTools({ serverKey, serverConfig }),
+        MCP_DISCOVERY_TIMEOUT_MS,
+        `server ${serverKey}`,
+      ),
+    ),
+  );
 
   const tools: AnyAgentTool[] = [];
   const existingNames = new Set<string>();
 
-  for (const [serverKey, serverConfig] of Object.entries(servers)) {
-    const discovered = await connectAndListTools({ serverKey, serverConfig });
-    if (!discovered || discovered.tools.length === 0) continue;
+  for (const result of discovered) {
+    if (!result || result.tools.length === 0) continue;
+    const { serverKey, tools: mcpTools } = result;
+    const serverConfig = servers[serverKey];
+    if (!serverConfig) continue;
 
-    for (const mcpTool of discovered.tools) {
-      const name = mcpToolName(discovered.serverKey, mcpTool.name);
+    for (const mcpTool of mcpTools) {
+      const name = mcpToolName(serverKey, mcpTool.name);
       if (existingNames.has(name)) continue;
       existingNames.add(name);
 
       const description =
         typeof mcpTool.description === "string" && mcpTool.description.trim()
           ? mcpTool.description.trim()
-          : `MCP tool ${mcpTool.name} (server: ${discovered.serverKey})`;
+          : `MCP tool ${mcpTool.name} (server: ${serverKey})`;
       const parameters = mcpInputSchemaToParameters(mcpTool.inputSchema);
 
       tools.push({
@@ -318,7 +349,7 @@ export async function resolveMcpTools(params: {
         parameters,
         execute: async (_toolCallId, args): Promise<AgentToolResult<unknown>> => {
           const result = await callMcpTool({
-            serverKey: discovered.serverKey,
+            serverKey,
             serverConfig,
             toolName: mcpTool.name,
             args: (args ?? {}) as Record<string, unknown>,

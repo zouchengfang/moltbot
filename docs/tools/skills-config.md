@@ -12,6 +12,16 @@ All skills-related configuration lives under `skills` in `~/.clawdbot/moltbot.js
 {
   skills: {
     allowBundled: ["gemini", "peekaboo"],
+    mcp: {
+      enabled: true,
+      servers: {
+        "my-server": {
+          command: "npx",
+          args: ["-y", "my-mcp-server"]
+        },
+        "remote-api": { url: "https://api.example.com/mcp" }
+      }
+    },
     load: {
       extraDirs: [
         "~/Projects/agent-scripts/skills",
@@ -41,6 +51,8 @@ All skills-related configuration lives under `skills` in `~/.clawdbot/moltbot.js
 
 ## Fields
 
+- `mcp.enabled`: include MCP servers as skills and tools (default: true). Set `false` to disable.
+- `mcp.servers`: MCP servers defined in config. Same shape as Cursor `.cursor/mcp.json`: each entry has `command` + `args` (stdio) or `url` (Streamable HTTP). Merged with Cursor config; config entries override Cursor for the same server name. Lets you add or override servers without editing `.cursor/mcp.json`.
 - `allowBundled`: optional allowlist for **bundled** skills only. When set, only
   bundled skills in the list are eligible (managed/workspace skills unaffected).
 - `load.extraDirs`: additional skill directories to scan (lowest precedence).

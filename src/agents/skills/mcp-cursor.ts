@@ -77,6 +77,34 @@ export function loadCursorMcpConfig(workspaceDir: string): Record<string, Cursor
   return merged;
 }
 
+/**
+ * Merged MCP config: Cursor (.cursor/mcp.json, ~/.cursor/mcp.json) plus config.skills.mcp.servers.
+ * Config servers override Cursor for the same name. Use this for tools and skill entries.
+ */
+export function getMergedMcpConfig(
+  workspaceDir: string,
+  config?: MoltbotConfig,
+): Record<string, CursorMcpServerConfig> {
+  const fromCursor = loadCursorMcpConfig(workspaceDir);
+  const fromConfig =
+    config?.skills?.mcp &&
+    typeof config.skills.mcp === "object" &&
+    config.skills.mcp.servers &&
+    typeof config.skills.mcp.servers === "object"
+      ? config.skills.mcp.servers
+      : undefined;
+
+  const merged: Record<string, CursorMcpServerConfig> = { ...fromCursor };
+  if (fromConfig) {
+    for (const [name, serverConfig] of Object.entries(fromConfig)) {
+      if (name && serverConfig && typeof serverConfig === "object") {
+        merged[name] = { ...serverConfig };
+      }
+    }
+  }
+  return merged;
+}
+
 function isMcpEnabled(config?: MoltbotConfig): boolean {
   const raw = config?.skills?.mcp;
   if (raw === undefined || raw === null) return true;
@@ -98,7 +126,7 @@ export function loadMcpSkillEntries(
 ): SkillEntry[] {
   if (!isMcpEnabled(opts?.config)) return [];
 
-  const servers = loadCursorMcpConfig(workspaceDir);
+  const servers = getMergedMcpConfig(workspaceDir, opts?.config);
   const entries: SkillEntry[] = [];
 
   for (const [serverName, serverConfig] of Object.entries(servers)) {
@@ -106,9 +134,7 @@ export function loadMcpSkillEntries(
     if (!trimmed) continue;
 
     const command =
-      typeof serverConfig.command === "string"
-        ? serverConfig.command.trim()
-        : undefined;
+      typeof serverConfig.command === "string" ? serverConfig.command.trim() : undefined;
     const args = Array.isArray(serverConfig.args)
       ? serverConfig.args.map((a) => String(a))
       : undefined;

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  getMergedMcpConfig,
   loadCursorMcpConfig,
   loadMcpSkillEntries,
   resolveCursorMcpPaths,
@@ -74,5 +75,37 @@ describe("mcp-cursor", () => {
       config: { skills: { mcp: { enabled: false } } },
     });
     expect(entries).toEqual([]);
+  });
+
+  it("getMergedMcpConfig merges Cursor config with skills.mcp.servers (config overrides)", async () => {
+    const workspaceDir = path.join(os.tmpdir(), `mcp-merge-config-${Date.now()}`);
+    const cursorDir = path.join(workspaceDir, ".cursor");
+    await fs.mkdir(cursorDir, { recursive: true });
+    await fs.writeFile(
+      path.join(cursorDir, "mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          fromCursor: { command: "node", args: ["cursor.js"] },
+          shared: { command: "node", args: ["old.js"] },
+        },
+      }),
+    );
+    const config = {
+      skills: {
+        mcp: {
+          servers: {
+            shared: { command: "npx", args: ["-y", "new-server"] },
+            fromConfig: { url: "https://example.com/mcp" },
+          },
+        },
+      },
+    };
+    const merged = getMergedMcpConfig(
+      workspaceDir,
+      config as import("../../config/config.js").MoltbotConfig,
+    );
+    expect(merged.fromCursor).toEqual({ command: "node", args: ["cursor.js"] });
+    expect(merged.shared?.command).toBe("npx");
+    expect(merged.fromConfig?.url).toBe("https://example.com/mcp");
   });
 });

@@ -217,6 +217,8 @@ const FIELD_LABELS: Record<string, string> = {
   "nodeHost.browserProxy.allowProfiles": "Node Browser Proxy Allowed Profiles",
   "skills.load.watch": "Watch Skills",
   "skills.load.watchDebounceMs": "Skills Watch Debounce (ms)",
+  "skills.mcp.enabled": "Enable MCP Servers",
+  "skills.mcp.servers": "MCP Servers (config)",
   "agents.defaults.workspace": "Workspace",
   "agents.defaults.repoRoot": "Repo Root",
   "agents.defaults.bootstrapMaxChars": "Bootstrap Max Chars",
