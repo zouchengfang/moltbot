@@ -14,6 +14,16 @@ import {
   resolveAgentDir,
 } from "../agents/agent-scope.js";
 
+/** Reject slugs that look like API/model error messages (e.g. "400-model-not-exist"). */
+function looksLikeErrorSlug(slug: string): boolean {
+  const lower = slug.toLowerCase();
+  if (/^\d+(-|$)/.test(lower)) return true; // starts with status code
+  if (/\b(400|401|403|404|500)\b/.test(lower)) return true;
+  if (/model-not-exist|unknown-model|error|failed/.test(lower)) return true;
+  if (lower.length < 3) return true; // too short to be meaningful
+  return false;
+}
+
 /**
  * Generate a short 1-2 word filename slug from session content using LLM
  */
@@ -40,6 +50,7 @@ ${params.sessionContent.slice(0, 2000)}
 Reply with ONLY the slug, nothing else. Examples: "vendor-pitch", "api-design", "bug-fix"`;
 
     const modelRef = resolveDefaultModelForAgent({ cfg: params.cfg, agentId });
+    console.log("[llm-slug-generator] Using model:", `${modelRef.provider}/${modelRef.model}`);
 
     const result = await runEmbeddedPiAgent({
       sessionId: `slug-generator-${Date.now()}`,
@@ -68,7 +79,7 @@ Reply with ONLY the slug, nothing else. Examples: "vendor-pitch", "api-design", 
           .replace(/^-|-$/g, "")
           .slice(0, 30); // Max 30 chars
 
-        return slug || null;
+        if (slug && !looksLikeErrorSlug(slug)) return slug;
       }
     }
 

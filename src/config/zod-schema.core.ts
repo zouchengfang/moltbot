@@ -456,6 +456,7 @@ export const ToolsMediaUnderstandingSchema = z
     headers: z.record(z.string(), z.string()).optional(),
     attachments: MediaUnderstandingAttachmentsSchema,
     models: z.array(MediaUnderstandingModelSchema).optional(),
+    defaultModels: z.record(z.string(), z.string()).optional(),
   })
   .strict()
   .optional();

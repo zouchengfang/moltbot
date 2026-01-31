@@ -100,6 +100,8 @@ export type MediaUnderstandingConfig = {
   attachments?: MediaUnderstandingAttachmentsConfig;
   /** Ordered model list (fallbacks in order). */
   models?: MediaUnderstandingModelConfig[];
+  /** Override default model id per provider (e.g. openai -> gpt-4o-mini-transcribe). Used when no model is set on an entry. */
+  defaultModels?: Record<string, string>;
 };
 
 export type LinkModelConfig = {

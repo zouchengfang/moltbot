@@ -104,6 +104,10 @@ export function resolveImageModelConfigForTool(params: {
     fallbacks.push(ref);
   };
 
+  const defaultModels = params.cfg?.tools?.media?.image?.defaultModels;
+  const imageModelRef = (provider: string, builtin: string): string =>
+    defaultModels?.[provider] ? `${provider}/${defaultModels[provider].trim()}` : builtin;
+
   const providerVisionFromConfig = resolveProviderVisionModelFromConfig({
     cfg: params.cfg,
     provider: primary.provider,
@@ -117,21 +121,21 @@ export function resolveImageModelConfigForTool(params: {
 
   // Prefer the provider's canonical vision model when auth exists.
   if (primary.provider === "minimax" && providerOk) {
-    preferred = "minimax/MiniMax-VL-01";
+    preferred = imageModelRef("minimax", "minimax/MiniMax-VL-01");
   } else if (primary.provider === "deepseek" && providerOk) {
-    preferred = providerVisionFromConfig ?? "deepseek/deepseek-vl";
+    preferred = providerVisionFromConfig ?? imageModelRef("deepseek", "deepseek/deepseek-vl");
   } else if (providerOk && providerVisionFromConfig) {
     preferred = providerVisionFromConfig;
   } else if (primary.provider === "openai" && openaiOk) {
-    preferred = "openai/gpt-5-mini";
+    preferred = imageModelRef("openai", "openai/gpt-5-mini");
   } else if (primary.provider === "anthropic" && anthropicOk) {
-    preferred = "anthropic/claude-opus-4-5";
+    preferred = imageModelRef("anthropic", "anthropic/claude-opus-4-5");
   }
 
   if (preferred?.trim()) {
-    if (openaiOk) addFallback("openai/gpt-5-mini");
-    if (anthropicOk) addFallback("anthropic/claude-opus-4-5");
-    if (deepseekOk) addFallback("deepseek/deepseek-vl");
+    if (openaiOk) addFallback(imageModelRef("openai", "openai/gpt-5-mini"));
+    if (anthropicOk) addFallback(imageModelRef("anthropic", "anthropic/claude-opus-4-5"));
+    if (deepseekOk) addFallback(imageModelRef("deepseek", "deepseek/deepseek-vl"));
     // Don't duplicate primary in fallbacks.
     const pruned = fallbacks.filter((ref) => ref !== preferred);
     return {
@@ -142,22 +146,24 @@ export function resolveImageModelConfigForTool(params: {
 
   // Cross-provider fallback when we can't pair with the primary provider.
   if (openaiOk) {
-    if (anthropicOk) addFallback("anthropic/claude-opus-4-5");
-    if (deepseekOk) addFallback("deepseek/deepseek-vl");
+    if (anthropicOk) addFallback(imageModelRef("anthropic", "anthropic/claude-opus-4-5"));
+    if (deepseekOk) addFallback(imageModelRef("deepseek", "deepseek/deepseek-vl"));
     return {
-      primary: "openai/gpt-5-mini",
+      primary: imageModelRef("openai", "openai/gpt-5-mini"),
       ...(fallbacks.length ? { fallbacks } : {}),
     };
   }
   if (anthropicOk) {
-    if (deepseekOk) addFallback("deepseek/deepseek-vl");
+    if (deepseekOk) addFallback(imageModelRef("deepseek", "deepseek/deepseek-vl"));
     return {
-      primary: "anthropic/claude-opus-4-5",
+      primary: imageModelRef("anthropic", "anthropic/claude-opus-4-5"),
       ...(fallbacks.length ? { fallbacks } : {}),
     };
   }
   if (deepseekOk) {
-    return { primary: "deepseek/deepseek-vl" };
+    return {
+      primary: imageModelRef("deepseek", "deepseek/deepseek-vl"),
+    };
   }
 
   return null;

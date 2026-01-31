@@ -360,8 +360,9 @@ async function resolveKeyEntry(params: {
       const activeEntry = await checkProvider(activeProvider, params.activeModel?.model);
       if (activeEntry) return activeEntry;
     }
+    const imageDefaults = cfg?.tools?.media?.image?.defaultModels;
     for (const providerId of AUTO_IMAGE_KEY_PROVIDERS) {
-      const model = DEFAULT_IMAGE_MODELS[providerId];
+      const model = imageDefaults?.[providerId] ?? DEFAULT_IMAGE_MODELS[providerId];
       const entry = await checkProvider(providerId, model);
       if (entry) return entry;
     }
@@ -386,8 +387,10 @@ async function resolveKeyEntry(params: {
     const activeEntry = await checkProvider(activeProvider, params.activeModel?.model);
     if (activeEntry) return activeEntry;
   }
+  const audioDefaults = cfg?.tools?.media?.audio?.defaultModels;
   for (const providerId of AUTO_AUDIO_KEY_PROVIDERS) {
-    const entry = await checkProvider(providerId, undefined);
+    const model = audioDefaults?.[providerId] ?? DEFAULT_AUDIO_MODELS[providerId];
+    const entry = await checkProvider(providerId, model);
     if (entry) return entry;
   }
   return null;
@@ -419,11 +422,12 @@ export async function resolveAutoImageModel(params: {
   activeModel?: ActiveMediaModel;
 }): Promise<ActiveMediaModel | null> {
   const providerRegistry = buildProviderRegistry();
+  const imageDefaults = params.cfg?.tools?.media?.image?.defaultModels;
   const toActive = (entry: MediaUnderstandingModelConfig | null): ActiveMediaModel | null => {
     if (!entry || entry.type === "cli") return null;
     const provider = entry.provider;
     if (!provider) return null;
-    const model = entry.model ?? DEFAULT_IMAGE_MODELS[provider];
+    const model = entry.model ?? imageDefaults?.[provider] ?? DEFAULT_IMAGE_MODELS[provider];
     if (!model) return null;
     return { provider, model };
   };
@@ -777,7 +781,12 @@ async function runProviderEntry(params: {
       config: params.config,
       entry,
     });
-    const model = entry.model?.trim() || DEFAULT_AUDIO_MODELS[providerId] || entry.model;
+    const audioDefaults = cfg?.tools?.media?.audio?.defaultModels;
+    const model =
+      entry.model?.trim() ||
+      audioDefaults?.[providerId] ||
+      DEFAULT_AUDIO_MODELS[providerId] ||
+      entry.model;
     const result = await provider.transcribeAudio({
       buffer: media.buffer,
       fileName: media.fileName,
