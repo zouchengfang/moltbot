@@ -2,7 +2,11 @@ type FetchWithPreconnect = typeof fetch & {
   preconnect: (url: string, init?: { credentials?: RequestCredentials }) => void;
 };
 
+import { ProxyAgent } from "undici";
+
 type RequestInitWithDuplex = RequestInit & { duplex?: "half" };
+
+type RequestInitWithDispatcher = RequestInit & { dispatcher?: unknown };
 
 function withDuplex(
   init: RequestInit | undefined,
@@ -64,4 +68,38 @@ export function resolveFetch(fetchImpl?: typeof fetch): typeof fetch | undefined
   const resolved = fetchImpl ?? globalThis.fetch;
   if (!resolved) return undefined;
   return wrapFetchWithAbortSignal(resolved);
+}
+
+/** HTTPS_PROXY / HTTP_PROXY (or lowercase). Used so Node fetch uses the proxy (built-in fetch ignores env). */
+function getEnvProxy(): string | undefined {
+  const url = (
+    process.env.HTTPS_PROXY ??
+    process.env.https_proxy ??
+    process.env.HTTP_PROXY ??
+    process.env.http_proxy ??
+    ""
+  ).trim();
+  return url || undefined;
+}
+
+let cachedProxyFetch: typeof fetch | null = null;
+
+/**
+ * Returns a fetch that uses HTTP_PROXY/HTTPS_PROXY when set (via undici ProxyAgent).
+ * Use this for outbound requests that must go through a proxy (e.g. web_search in Docker).
+ */
+export function fetchWithEnvProxy(): typeof fetch {
+  if (cachedProxyFetch) return cachedProxyFetch;
+  const proxyUrl = getEnvProxy();
+  if (!proxyUrl) {
+    cachedProxyFetch = wrapFetchWithAbortSignal(globalThis.fetch);
+    return cachedProxyFetch;
+  }
+  const agent = new ProxyAgent(proxyUrl);
+  const fetchImpl = (input: RequestInfo | URL, init?: RequestInit) => {
+    const opts: RequestInitWithDispatcher = { ...init, dispatcher: agent };
+    return fetch(input, opts);
+  };
+  cachedProxyFetch = wrapFetchWithAbortSignal(fetchImpl);
+  return cachedProxyFetch;
 }

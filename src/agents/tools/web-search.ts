@@ -2,6 +2,7 @@ import { Type } from "@sinclair/typebox";
 
 import type { MoltbotConfig } from "../../config/config.js";
 import { formatCliCommand } from "../../cli/command-format.js";
+import { fetchWithEnvProxy } from "../../infra/fetch.js";
 import type { AnyAgentTool } from "./common.js";
 import { jsonResult, readNumberParam, readStringParam } from "./common.js";
 import {
@@ -273,8 +274,9 @@ async function runPerplexitySearch(params: {
   timeoutSeconds: number;
 }): Promise<{ content: string; citations: string[] }> {
   const endpoint = `${params.baseUrl.replace(/\/$/, "")}/chat/completions`;
+  const doFetch = fetchWithEnvProxy();
 
-  const res = await fetch(endpoint, {
+  const res = await doFetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -371,7 +373,8 @@ async function runWebSearch(params: {
     url.searchParams.set("freshness", params.freshness);
   }
 
-  const res = await fetch(url.toString(), {
+  const doFetch = fetchWithEnvProxy();
+  const res = await doFetch(url.toString(), {
     method: "GET",
     headers: {
       Accept: "application/json",

@@ -117,3 +117,23 @@ docker compose -f docker-compose.yml -f docker-compose.app1-server.yml up -d --f
 
 1. 在服务器上若未设置 `CLAWDBOT_GATEWAY_TOKEN`，脚本会生成并写入 `.env`
 2. 浏览器访问 `http://10.0.55.131:18789/`，在控制台设置中粘贴 Token
+
+## 150 定时任务（参考 10.5.0.8）
+
+若 10.5.0.8（或 131）上已配置了 Gateway 定时任务（Cron），可在**能 SSH 到参考主机与 150 的本机**执行同步脚本，将 cron `jobs.json` 拷到 150 并重启 gateway。
+
+- **10.5.0.8** 上定时任务路径为 `/root/.openclaw/cron/jobs.json`（脚本会自动使用该路径）。
+- **131/150** 上为 `APP_ROOT/.clawdbot/cron/jobs.json`。
+
+```bash
+# 从 10.5.0.8 同步到 150（默认，自动用 .openclaw 路径）
+SOURCE_HOST=root@10.5.0.8 ./scripts/deploy-to-app1-server/sync-cron-to-150.sh
+```
+
+从 131 同步到 150：
+
+```bash
+SOURCE_HOST=root@10.0.55.131 ./scripts/deploy-to-app1-server/sync-cron-to-150.sh
+```
+
+环境变量：`SOURCE_HOST`、`SOURCE_CRON_PATH`（覆盖源路径）、`TARGET_HOST`（默认 `root@10.0.55.150`）、`APP_ROOT`（默认 `/zouchengfang/moltbot`）、`RESTART=0` 可跳过同步后重启 gateway。
